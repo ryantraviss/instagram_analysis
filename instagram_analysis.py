@@ -663,9 +663,9 @@ analysis_object = Analysis(likes_media= False, likes_comment = False,
 #analysis_object.days_range("2019-12-27","2020-01-05") #AMC 2019
 #analysis_object.best_friends()
 #analysis_object.weekdays_hours("2020-03")
-#analysis_object.auto_analysis_time()
+analysis_object.auto_analysis_time()
 #analysis_object.timezone_test()
-analysis_object.hours("2020-01")
+#analysis_object.hours("2020-01")
 
 #for x in range(1,5):
 #    for y in range(1,32):
