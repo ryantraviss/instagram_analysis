@@ -655,9 +655,7 @@ class Analysis:
         print("#"*10,"Automated Analysis Finished","#"*10)
         
 
-analysis_object = Analysis(likes_media= False, likes_comment = False, 
-                           comments = False, stories = False, chaining_seen = False,
-                           posts = False, direct = False, print_latex = False)
+analysis_object = Analysis()
 #analysis_object.months("2018")
 #analysis_object.days_range("2018-12-27","2019-01-06") #AMC 2018
 #analysis_object.days_range("2019-12-27","2020-01-05") #AMC 2019
