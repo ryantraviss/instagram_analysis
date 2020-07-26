@@ -1,0 +1,133 @@
+files_overview by Ryan Traviss
+The following is documentation of what was in the files I recieved when I downloaded my data. You may have extra categories if you have done stuff I haven't.
+
+account_history.json ['login_history', 'registration_info']
+
+autofill.json 
+	["You have no data in this section"]
+
+checkout.json 
+	{"contact_info": {"payment_account_emails": []}}
+
+comments.json ['media_comments']
+	media_comments
+		[['2020-04-24T15:43:31+00:00', '@username they really need to patch that out', 'username'], ...]
+
+connections.json ['blocked_users', 'close_friends', 'follow_requests_sent', 'followers', 'following', 'dismissed_suggested_users']
+	blocked_users
+		{'username1': '2019-08-13T06:21:09+00:00', 'username2': '2019-02-02T08:21:57+00:00'}
+	close_friends
+		{'username': '2019-10-12T09:48:15+00:00', ...}
+	follow_requests_sent
+		{'username': '2020-04-22T20:51:10+00:00', ...}
+	followers
+		{'username': '2020-04-24T17:41:47+00:00', ...}
+	following
+		{'username': '2020-04-24T17:18:00+00:00', ...}
+	dismissed_suggested_users
+		{'username': '2020-03-27T17:08:17+00:00', ...}
+
+devices.json ['camera', 'devices']
+	camera
+		[{'device_id': 'd689e24f71ff30e85b063d2b0d7fbc50', 'supported_sdk_versions': '55.0,56.0,57.0,58.0,59.0,60.0,61.0,62.0,63.0,64.0,65.0,66.0,67.0,68.0,69.0,70.0,71.0,72.0,73.0,74.0,75.0,76.0,77.0,78.0,79.0,80.0,81.0,82.0,83.0,84.0,85.0,86.0,87.0', 'face_filter': '14', 'compression': 'etc2_compression'}]
+	devices
+		[{'last_seen': '2020-04-27T12:43:31.868419+00:00', 'user_agent': 'Instagram 138.0.0.28.117 Android (27/8.1.0; 480dpi; 1080x1776; motorola; Moto G (5S) Plus; sanders_n; qcom; en_GB; 210180513)', 'device_id': 'android-1511b854ef88e1a0'}, ...]
+
+infomation_abou_you.json
+	{"primary_location": {"city_name": "Town"}}
+
+likes.json ['media_likes', 'comment_likes']
+	media_likes
+		[['2020-04-27T12:38:44+00:00', 'username'], ...]
+	comment_likes
+		[['2020-04-24T15:43:22+00:00', 'username'], ...]
+
+media.json ['stories', 'photos', 'profile', 'direct']
+	stories
+		[{'caption': '', 'taken_at': '2020-04-26T16:16:50+00:00', 'path': 'stories/202004/437ab7043aa14d0f31a74a0745cbba60.jpg'}, ...]
+	photos
+		[{'caption': 'An impromptu frosty photoshoot', 'taken_at': '2020-01-20T17:12:00+00:00', 'path': 'photos/202001/3272de136d1d5ed0cc41e84965b9e1ff.jpg'}, ...]
+
+	profile
+		[{'caption': '', 'taken_at': '2019-07-20T17:41:17+00:00', 'is_active_profile': True, 'path': 'profile/201907/d5c0273552b5ddd5b2ed30fbe3040849.jpg'}]
+	direct
+		[{'taken_at': '2019-11-22T10:52:43.556896+00:00', 'path': 'direct/201911/c0b6b7006469669812a93e1f5f142ba9.jpg'}, ...]
+
+messages.json (a long list)
+	[0]
+		participants
+			['username', ...]
+		conversation
+			[{'sender': 'username', 'created_at': '2020-04-27T12:39:33.074933+00:00', 'text': 'You bet you have'}, ...]
+
+profile.json ['biography', 'date_joined', 'email', 'website', 'gender', 'private_account', 'name', 'profile_pic_url', 'username', 'date_of_birth']
+	biography
+		My bio would be here
+	date_joined
+		2017-07-19T08:57:05
+	email
+		something@something.com
+	website
+		www.website.com
+	gender
+		male
+	private_account
+		True
+	name 
+		Ryan T
+	profile_pic_url
+		https://scontent.cdninstagram.com/v/t51.2885-19/s150x150/66287773_357120581847725_1179412669615046656_n.jpg?_nc_ht=scontent.cdninstagram.com&_nc_ohc=PiiJh95u5WYAX89XQzD&oh=e117d565e6e51e7e2fe40be90c5bc073&oe=5ECE6F82
+	username
+		username
+	date_of_birth
+		YYYY-MM-DD
+	
+saved.json ['saved_collections', 'saved_media']
+	saved_collections
+		[0]
+			name
+				Gilwell 24
+			created_at
+				2019-07-15T17:23:30+00:00
+			updated_at
+				2019-07-15T17:23:30+00:00
+			media
+				[['2019-07-15T17:23:30+00:00', 'username'], ...]
+
+	saved_media
+		[['2020-03-21T13:41:53+00:00', 'username'], ...]
+searches.json
+	[0]
+		search_click
+			exetermathssch
+		time
+			2020-04-22T20:47:58+00:00
+		type
+			user
+
+seen_content ['videos_watched', 'ads_seen', 'chaining_seen', 'posts_seen']
+	videos_watched
+		[{'timestamp': '2020-04-26T22:25:54+00:00', 'author': 'username'}, ...]
+	ads_seen
+		[{'timestamp': '2020-04-25T18:41:00+00:00', 'author': 'nintendouk'}, ...]
+	chaining_seen
+		[{'timestamp': '2020-04-25T21:35:04+00:00', 'username': 'username'}, ...]
+	posts_seen
+		[{'timestamp': '2020-04-26T22:25:54+00:00', 'author': 'username'}, ...]
+settings.json
+	{"allow_comments_from": "Everyone"}
+
+stories_activities.json ['polls', 'emoji_sliders', 'questions', 'countdowns', 'quizzes']
+	polls
+		[['2020-02-09T18:10:15+00:00', 'username'], ...]
+	emoji_sliders
+		[['2019-08-21T17:44:36+00:00', 'username'], ...]
+	questions
+		[['2020-04-22T13:17:55+00:00', 'username'], ...]
+	countdowns
+		[['2019-08-22T08:30:39+00:00', 'username'], ...]
+	quizzes
+		[['2020-02-02T13:32:17+00:00', 'username'], ...]
+
+uploaded_contacts.json (a long list)
+	[{'first_name': 'John', 'last_name': 'Doe', 'contact': '7000000000', 'imported_time': '2018-01-17T17:33:51+00:00'}, ...]
