@@ -1,41 +1,84 @@
+#instagram_analysis by Ryan Traviss
 """
-instagram_analysis by Ryan Traviss
-2017-07-19T15:57:06+00:00 was when I made my account in format YYYY-MM-DDThh:mm:ss then timezone which for my data is always +00:00
-I have liked 8242 posts and 223 comments from 556 diffrent accounts
-I have made 285 comments.
-seen_content "ads_seen", "posts_seen", "videos_watched" are only for more recent period
+Notes:
+    2017-07-19T08:57:05 was when I made my account in format YYYY-MM-DDThh:mm:ss
+    the timezone for my data is always +00:00
+    I have liked 8242 posts and 223 comments from 556 diffrent accounts
+    I have made 285 comments.
+    seen_content "ads_seen", "posts_seen", "videos_watched" are only for more recent period
+    example comment: ['2020-04-24T15:39:04+00:00', '@username How much lag is there on that server?', 'username']
+"""
 
-example comment: ['2020-04-24T15:39:04+00:00', '@username How much lag is there on that server?', 'username']
-
+"""
 To do(code):
-    posts (photos) adds one piece of data per photo but a post can include up to 10!
-        What do I want to do about this?
     make graphs title properly for all the new types of data.
     add connections data
-    use profile to get when account was made ect
     use account_history ?
     use 'profile' from media.json ? only 1 thing there
     analyize captions / text of comments?
-    see who i am replying to in comments?
     maybe add stories_activities but will have small effect
         / may not have been possible since beginning
     use messages data?
     add user data stuff
     fix xticks properly
+    Is there any way of getting who I have tagged in an image? 
+        Would be VERY useful for best friends...
+    I'm still unsure of what chaining_seen even is...
     
 """
+
+"""
+Comment Mode Documentation
+    This is to explain the variable comment_mode which is used to select the username of a comment you have made.
+    It is a string with 3 supported values: ("post", "reply" or "smart")
+    
+    "post" : This means the username of a comment is the username of the user 
+            who made the post on which you have commented. 
+            Very often this is your username if you reply to comments on your own posts.
+    
+    "reply" : This means the username is the 1st word of the comment minus the 1st character
+            Comments where you are replying to someone are automatically "@username blah blah..."
+            
+    "smart" : If the first character of the comment is "@" then "reply" is used 
+            else "post" method is used.
+            
+    Generally, "smart" gives the most informative results so it is the default mode. 
+
+"""
+
+"""
+Post Mode Documentation
+    This is to explain the variable post_mode which determines how datetimes are extracted from posts.
+    It is a string with 2 supported values: ("single" or "multiple")
+    
+    "single" : This means each post counts as a single datetime regardless of how many photos it contains.
+            This is checked by comparing the datetimes (excluding minutes, seconds, timezone) and captions of 
+            posts next to each other. 
+            (It appears Instagram can record diffrent minutes for diffrent photos in the same post
+            and this lead to errors so thus why caption is also used. 
+            Captions alone are not neccesarily unique amongst a user's posts.)
+            
+    "multiple" : Each photo within a post (which can contain up to 10) is counted as a datetime.
+    
+    I see no reason why posts should have diffrent weightings in the results 
+    based on the number of photos they contain so "single" is the default mode.
+
+"""
+
 import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics
 
 class Analysis:
-    def __init__(self, likes_filename = "likes.json", comments_filename = "comments.json", 
-                 posts_filename = "media.json", seen_content_filename = "seen_content.json",
-                 likes_media = True, likes_comment = True, comments = True, stories = True, 
-                 posts = True, direct = True, chaining_seen = True, print_latex = False):
+    def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
+                 posts_filename = "media.json", seen_content_filename = "seen_content.json", profile_filename = "profile.json",
+                 likes_media = True, likes_comment = True, comments = True, comment_mode = "smart", stories = True, 
+                 posts = True, post_mode = "single", direct = True, chaining_seen = True, print_latex = False):
         """
         Creates an object of from the Likes class.
 
         Parameters
         ----------
+        path : String, optional
+            The path of the folder containing the JSON files. The default is "".
         likes_filename : String, optional
             The filename of the likes JSON file. The default is "likes.json".
         comments_filename : String, optional
@@ -50,10 +93,14 @@ class Analysis:
             Should likes on comments be used (called comment_likes in JSON data). The default is True.
         comments : Boolean, optional
             Should comments be used. The default is True.
+        comment_mode : String ("post", "reply" or "smart"), optional
+            How should the username be identified from comments(See docs at top). The default is "smart".
         stories: Boolean, optional
             Should stories be used (timestamp only). The default is True.
         posts: Boolean, optional
             Should posts be used (timestamp only). The default is True.
+        post_mode : String ("single" or "multiple"), optional
+            How should the datetime be identified from posts(See docs at top). The default is "single".
         direct: Boolean, optional
             Should pictures sent as direct messages be used. The default is True.
         chaining_seen: Boolean, optional
@@ -68,39 +115,28 @@ class Analysis:
         self.likes_media = likes_media
         self.likes_comment = likes_comment
         self.comments = comments
+        self.comment_mode = comment_mode
         self.stories = stories
         self.posts = posts
+        self.post_mode = post_mode
         self.direct = direct
         self.chaining_seen = chaining_seen
         self.print_latex = print_latex
         
-        likes_file_handel = open(likes_filename,"r")
-        likes_raw_data = likes_file_handel.read()
-        likes_file_handel.close()
-        self.likes_json_data = json.loads(likes_raw_data)
+
+        self.likes_json_data = self.__read_json__(path+likes_filename)
+        self.comments_json_data = self.__read_json__(path+comments_filename)
+        self.posts_json_data = self.__read_json__(path+posts_filename)
+        self.seen_content_json_data = self.__read_json__(path+seen_content_filename)
+        self.profile_json_data = self.__read_json__(path+profile_filename)
         
-        comments_file_handle = open(comments_filename,"r",encoding="utf8")
-        comments_raw_data = comments_file_handle.read()
-        comments_file_handle.close()
-        self.comments_json_data = json.loads(comments_raw_data)
-        
-        posts_file_handle = open(posts_filename,"r",encoding="utf8")
-        posts_raw_data = posts_file_handle.read()
-        posts_file_handle.close()
-        self.posts_json_data = json.loads(posts_raw_data)
-        
-        seen_content_file_handle = open(seen_content_filename,"r",encoding="utf8")
-        seen_content_raw_data = seen_content_file_handle.read()
-        seen_content_file_handle.close()
-        self.seen_content_json_data = json.loads(seen_content_raw_data)
-        
-        
+        self.account_created_date = self.profile_json_data["date_joined"]
         self.min_year, self.max_year = self.__min_max_year__()
         
-    def change_settings(self, likes_media = True, likes_comment = True, comments = True, 
-                        stories = True, posts = True, direct = True, chaining_seen = True, print_latex = False):
+    def change_settings(self, likes_media = True, likes_comment = True, comments = True, comment_mode = "smart", stories = True, 
+                 posts = True, post_mode = "single", direct = True, chaining_seen = True, print_latex = False):
         """
-        Updates the state of the parameters determining which sources of data should be used.
+        Updates the state of the variables determining which sources of data should be used.
 
         Parameters
         ----------
@@ -114,13 +150,35 @@ class Analysis:
         self.likes_media = likes_media
         self.likes_comment = likes_comment
         self.comments = comments
+        self.comment_mode = comment_mode
         self.stories = stories
         self.posts = posts
+        self.post_mode = post_mode
         self.direct = direct
         self.chaining_seen = chaining_seen
         self.print_latex = print_latex
         
         self.min_year, self.max_year = self.__min_max_year__()
+        
+    def __read_json__(self, filename):
+        """
+        Opens the file, reads the data, closes it and turns it into a dictionary. 
+
+        Parameters
+        ----------
+        filename : string
+            The filename of a JSON file to be opened and read.
+
+        Returns
+        -------
+        Dictionary
+            The JSON data in the file as a Python dictionary.
+
+        """
+        file_handle = open(filename,"r",encoding="utf8")
+        raw_data = file_handle.read()
+        file_handle.close()
+        return json.loads(raw_data)
         
     def __data_time__(self, slice_match, match, slice_keep, return_ints=True):
         """
@@ -163,9 +221,20 @@ class Analysis:
                 if self.posts_json_data["stories"][x]["taken_at"][slice_match] == match:
                     like_times.append(self.posts_json_data["stories"][x]["taken_at"][slice_keep])
         if self.posts:
+            previous_datetime = ""
+            previous_caption = ""
             for x in range(len(self.posts_json_data["photos"])):
-                if self.posts_json_data["photos"][x]["taken_at"][slice_match] == match:
-                    like_times.append(self.posts_json_data["photos"][x]["taken_at"][slice_keep])
+                if self.post_mode == "multiple": #see documentation at top about post modes
+                    if self.posts_json_data["photos"][x]["taken_at"][slice_match] == match:
+                        like_times.append(self.posts_json_data["photos"][x]["taken_at"][slice_keep])
+                elif self.post_mode == "single":
+                    current_datetime = self.posts_json_data["photos"][x]["taken_at"][0:13]
+                    current_caption = self.posts_json_data["photos"][x]["caption"]
+                    if current_datetime[slice_match] == match and current_datetime != previous_datetime and current_caption != previous_caption:
+                        like_times.append(current_datetime[slice_keep])
+                    previous_datetime = current_datetime
+                    previous_caption = current_caption
+                        
         
         if self.direct:
             for x in range(len(self.posts_json_data["direct"])):
@@ -197,13 +266,30 @@ class Analysis:
         if self.likes_media:
             for x in range(len(self.likes_json_data["media_likes"])):
                 likes_users.append(self.likes_json_data["media_likes"][x][1])
+                
         if self.likes_comment:
             for x in range(len(self.likes_json_data["comment_likes"])):
                 likes_users.append(self.likes_json_data["comment_likes"][x][1])
+                
         if self.comments:
             for x in range(len(self.comments_json_data["media_comments"])):
-                likes_users.append(self.comments_json_data["media_comments"][x][2])
-
+                if self.comment_mode == "post": #see documentation at top of file about comment modes
+                    likes_users.append(self.comments_json_data["media_comments"][x][2])
+                elif self.comment_mode == "reply":
+                    #The following line gets the first word of each comment and removes the first character
+                    #which should be an @ if you are replying to someone and adds the rest of the word
+                    #which should be a username (but isn't always if it is a top level comment)
+                    likes_users.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
+                elif self.comment_mode == "smart":
+                    if self.comments_json_data["media_comments"][x][1].split(" ")[0][0] == "@":
+                        likes_users.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
+                    else:
+                        likes_users.append(self.comments_json_data["media_comments"][x][2])
+                        
+        if self.chaining_seen:
+            for x in range(len(self.seen_content_json_data["chaining_seen"])):
+                likes_users.append(self.seen_content_json_data["chaining_seen"][x]["username"])
+                
         return likes_users
     
     def __graph__(self,like_times,date,xlabel,style = "-b",unique = False):#, xticks = range(min(like_times),max(like_times))):
@@ -288,7 +374,7 @@ class Analysis:
         plt.xlabel(xlabel)
         plt.show()
         
-    def __table__(self,like_times,missing_times=0,sort_by_likes=False):
+    def __table__(self,like_times,missing_times=0,sort_by_likes=False,max_rows=1000):
         """
         Produces a full table of the selected data including summary statistics.
 
@@ -298,6 +384,8 @@ class Analysis:
             The data being analized.
         missing_times : integer, optional
             The number of missing 0's. The default is 0.
+        max_rows : integer, optional
+            The maximum number of rows that should be displayed. The default is 1000.
             
         Returns
         -------
@@ -319,7 +407,7 @@ class Analysis:
             print("Please enter the amount of missing times for the table above:")
             print("Enter 0 if all the times/dates appear")
             missing_times = int(input(">>>"))
-        for x in range(0,missing_times):
+        for x in range(0,min(missing_times,max_rows)):
             like_counts = np.append(like_counts,[0])
         
         print("Total", sum(like_counts))
@@ -332,7 +420,7 @@ class Analysis:
         if self.print_latex:
             print("\n","#"*20,"Latex","#"*20)
             print("""\\begin{table}[h]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c| } \n \hline TBC & TBC""")
-            for i in range(len(time)):
+            for i in range(min(len(time),max_rows)):
                 print(time[i],"&",like_counts[i],"\\\\",end="")
             print("\hline Total &",sum(like_counts),"\\\\")
             print("\hline Mean &",statistics.mean(like_counts),"\\\\")
@@ -340,6 +428,23 @@ class Analysis:
             print("SD & ",statistics.pstdev(like_counts),"\\\\")
             print("Range & ",max(like_counts)-min(like_counts),"\\\\")
             print(""" \hline\n\end{tabular}\n\end{table}""")
+            
+    def profile_summary(self):
+        """
+        Prints a summary of your profile.
+
+        Returns
+        -------
+        None.
+
+        """
+        print("Your name is",self.profile_json_data["name"] + ", you are", self.profile_json_data["gender"],"and you were born on",self.profile_json_data["date_of_birth"]+".")
+        if self.profile_json_data["private_account"]:
+            print("You joined Instagram at", self.profile_json_data["date_joined"], "and made a private account with the username", self.profile_json_data["username"]+".")
+        else:
+            print("You joined Instagram at", self.profile_json_data["date_joined"], "and made a public account with the username", self.profile_json_data["username"]+".")
+        print("Your bio is:\n"+self.profile_json_data["biography"])
+        print("Your email is",self.profile_json_data["email"],"and your website is", self.profile_json_data["website"]+".")
             
     def timezone_test(self):
         """
@@ -540,6 +645,23 @@ class Analysis:
         self.__graph_boxplot__(like_times,year_month,"Day")
         self.__table__(like_times)
         
+    def top_days(self,number_of_days=25):
+        """
+        Prints a table of the dates of the days with the most activity.
+        
+        Parameters
+        ----------
+        number_of_days : string, optional
+            The number of days to display. The default is 25.
+
+        Returns
+        -------
+        None.
+
+        """
+        like_times = self.__data_time__(slice(10,11),"T",slice(0,10),return_ints=False)
+        self.__table__(like_times,max_rows=number_of_days,sort_by_likes=True)
+        
     def days_range(self,start_date,finish_date): 
         """ 
         Conducts analysis on all days between start_date and finish_date inclusive.
@@ -638,13 +760,14 @@ class Analysis:
         """
         like_friends = self.__data_user__()
         self.__table__(like_friends,sort_by_likes=True)
-        #add graphs
+        #add graphs?
         
     def auto_analysis_time(self):
         self.timezone_test()
         #do all time analysis here
         self.hours("")
         self.months("")
+        self.top_days()
 
         for year in range(self.min_year,self.max_year+1):
             year = str(year)
@@ -656,7 +779,7 @@ class Analysis:
         
 
 analysis_object = Analysis()
-#analysis_object.months("2018")
+#analysis_object.months("")
 #analysis_object.days_range("2018-12-27","2019-01-06") #AMC 2018
 #analysis_object.days_range("2019-12-27","2020-01-05") #AMC 2019
 #analysis_object.best_friends()
@@ -664,6 +787,8 @@ analysis_object = Analysis()
 analysis_object.auto_analysis_time()
 #analysis_object.timezone_test()
 #analysis_object.hours("2020-01")
+#analysis_object.top_days()
+#analysis_object.profile_summary()
 
 #for x in range(1,5):
 #    for y in range(1,32):
