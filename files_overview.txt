@@ -2,7 +2,32 @@ files_overview by Ryan Traviss
 The following is documentation of what was in the files I recieved when I downloaded my data. You may have extra categories if you have done stuff I haven't.
 
 account_history.json ['login_history', 'registration_info']
-
+	login_history
+		cookie_name
+			*************************pz3
+		ip_address 
+			123.123.123.123
+		language_code
+			en
+		timestamp
+			2020-04-27T12:43:31+00:00
+		user_agent 
+			Instagram 138.0.0.28.117 Android (27/8.1.0; 480dpi; 1080x1776; motorola; Moto G (5S) Plus; sanders_n; qcom; en_GB; 210180513)
+		device_id
+			android-1511b854ef88e1a0
+	registration_info
+		registration_username
+			username
+		ip_address
+			123.123.123.123
+		registration_time
+			2017-07-19T15:57:06+00:00 
+		registration_email
+			email@website.com
+		registration_phone_number
+			''	(The empty strings are not a result of me editing the data) 
+		device_name
+			''
 autofill.json 
 	["You have no data in this section"]
 
