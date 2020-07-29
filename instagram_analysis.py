@@ -1,34 +1,46 @@
-#instagram_analysis by Ryan Traviss
+#instagram_analysis.py by Ryan Traviss
 """
 Notes:
+    This code has only been tested on Python 3.7.6
     2017-07-19T08:57:05 was when I made my account in format YYYY-MM-DDThh:mm:ss
     the timezone for my data is always +00:00
     I have liked 8242 posts and 223 comments from 556 diffrent accounts
     I have made 285 comments.
     seen_content "ads_seen", "posts_seen", "videos_watched" are only for more recent period
     example comment: ['2020-04-24T15:39:04+00:00', '@username How much lag is there on that server?', 'username']
+    message includes posts send as messages
+    a good setting for making venn diagram of my friends activity:
+        Analysis(messages=True,followers=True,following=True,chaining_seen=False)
+    I have not attempted to round numbers as its actually really HARD to do properly!
+        eg. round(0.0750,2) -> 0.07 which is just wrong
+        Just do it yourself and don't be lazy aha.
 """
 
 """
 To do(code):
     make graphs title properly for all the new types of data.
-    add connections data
     use account_history ?
     use 'profile' from media.json ? only 1 thing there
-    analyize captions / text of comments?
+    analyize captions / text of comments? - privacy issues!
     maybe add stories_activities but will have small effect
         / may not have been possible since beginning
-    use messages data?
-    add user data stuff
-    fix xticks properly
+    add user data stuff - seen_content & stories_activities
     Is there any way of getting who I have tagged in an image? 
         Would be VERY useful for best friends...
     I'm still unsure of what chaining_seen even is...
-    
-"""
+    use saved_media ? Is datetime of when it was saved or when it was posted?
+    Add even more user messages modes - using message likes, media and posts ect
+    use more connections data - dismissed_suggested_users ect?
+    extract usernames from text of captions from posts and stories ect using @
+    make a weighted usage measure?
+    stop mean in table being truncated to integers
+    rename variables in __table__ as they are not just for times
+    show distribution of friends
+    make messages time modes so eg. it is only for me
+""" 
 
 """
-Comment Mode Documentation
+Comment Mode (self.comment_mode) Documentation
     This is to explain the variable comment_mode which is used to select the username of a comment you have made.
     It is a string with 3 supported values: ("post", "reply" or "smart")
     
@@ -47,7 +59,7 @@ Comment Mode Documentation
 """
 
 """
-Post Mode Documentation
+Post Mode (self.post_mode) Documentation
     This is to explain the variable post_mode which determines how datetimes are extracted from posts.
     It is a string with 2 supported values: ("single" or "multiple")
     
@@ -60,18 +72,38 @@ Post Mode Documentation
             
     "multiple" : Each photo within a post (which can contain up to 10) is counted as a datetime.
     
-    I see no reason why posts should have diffrent weightings in the results 
+    I see no reason why posts should have different weightings in the results 
     based on the number of photos they contain so "single" is the default mode.
 
+"""
+
+"""
+User Message Mode (self.message_mode_user) Documentation
+    This is to explain the variable message_mode_user which determines how users are extracted from messages.
+    It is a string with 6 supported values: ("sender_individual","sender_group","sender_both","participants_individual","participants_group","participants_both")
+    
+    "sender_individual" : The users are the senders of messages in chats with only two people in ie. you and them.
+    "sender_group" : The users are the senders of messages in groupchats (have more than 2 participants).
+    "sender_both" : Both of the above are used.
+                    Each user is added once per message they send.
+        
+    "participants_individual" : The users are anyone who has sent a message to you or you have a message to privately.
+    "participants_group" : The users are anyone that you are in a groupchat with. 
+    "participants_both" : Both of the above are used.
+    
+    "sender_individual" is the default mode.
 """
 
 import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics
 
 class Analysis:
     def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
-                 posts_filename = "media.json", seen_content_filename = "seen_content.json", profile_filename = "profile.json",
-                 likes_media = True, likes_comment = True, comments = True, comment_mode = "smart", stories = True, 
-                 posts = True, post_mode = "single", direct = True, chaining_seen = True, print_latex = False):
+                 posts_filename = "media.json", seen_content_filename = "seen_content.json", 
+                 profile_filename = "profile.json", messages_filename = "messages.json", connections_filename = "connections.json",
+                 media_likes = True, comment_likes = True, comments = True, comment_mode = "smart", 
+                 stories = True, posts = True, post_mode = "single", 
+                 direct = True, chaining_seen = True, messages = True, message_mode_user = "sender_individual", 
+                 followers = False, following = False, print_latex = False):
         """
         Creates an object of from the Likes class.
 
@@ -87,9 +119,13 @@ class Analysis:
             The filename of the posts JSON file. The default is "media.json".
         seen_content_filename : String, optional
             The filename of the seen_content JSON file. The default is "seen_content.json".
-        likes_media : Boolean, optional
+        messages_filename : String, optional
+            The filename of the messages JSON file. The default is "messages.json".
+        connections_filename : String, optional
+            The filename of the connections JSON file. The default is "connections.json".
+        media_likes : Boolean, optional
             Should likes on posts be used (called media_likes in JSON data). The default is True.
-        likes_comment: Boolean, optional
+        comment_likes: Boolean, optional
             Should likes on comments be used (called comment_likes in JSON data). The default is True.
         comments : Boolean, optional
             Should comments be used. The default is True.
@@ -105,15 +141,23 @@ class Analysis:
             Should pictures sent as direct messages be used. The default is True.
         chaining_seen: Boolean, optional
             Should links followed on Instagram be used. The default is True.
+        messages: Boolean, optional
+            Should messages be used. The default is True.
+        message_mode_user: String ("sender_individual","sender_group","sender_both","participants_individual","participants_group","participants_both"), optional
+            How should user be indentified from messages(see docs at top). The default is "sender_individual".
+        followers: Boolean, optional
+            Should followers be used. The default is False.
+        following: Boolean, optional
+            Should users you follow be used. The default is False.
         print_latex : Boolean, optional
-            Should the latex to make the tables be printed. Default False.
+            Should the latex to make the tables be printed. The default is False.
         Returns
         -------
         None.
 
         """
-        self.likes_media = likes_media
-        self.likes_comment = likes_comment
+        self.media_likes = media_likes
+        self.comment_likes = comment_likes
         self.comments = comments
         self.comment_mode = comment_mode
         self.stories = stories
@@ -121,6 +165,10 @@ class Analysis:
         self.post_mode = post_mode
         self.direct = direct
         self.chaining_seen = chaining_seen
+        self.messages = messages
+        self.message_mode_user = message_mode_user
+        self.followers = followers
+        self.following = following
         self.print_latex = print_latex
         
 
@@ -129,12 +177,16 @@ class Analysis:
         self.posts_json_data = self.__read_json__(path+posts_filename)
         self.seen_content_json_data = self.__read_json__(path+seen_content_filename)
         self.profile_json_data = self.__read_json__(path+profile_filename)
+        self.messages_json_data = self.__read_json__(path+messages_filename)
+        self.connections_json_data = self.__read_json__(path+connections_filename)
         
         self.account_created_date = self.profile_json_data["date_joined"]
+        self.username = self.profile_json_data["username"]
         self.min_year, self.max_year = self.__min_max_year__()
         
-    def change_settings(self, likes_media = True, likes_comment = True, comments = True, comment_mode = "smart", stories = True, 
-                 posts = True, post_mode = "single", direct = True, chaining_seen = True, print_latex = False):
+    def change_settings(self, media_likes = True, comment_likes = True, comments = True, comment_mode = "smart", stories = True, 
+                 posts = True, post_mode = "single", direct = True, chaining_seen = True, messages = True, message_mode_user = "sender_individual",
+                 followers = True, following = True, print_latex = False):
         """
         Updates the state of the variables determining which sources of data should be used.
 
@@ -147,8 +199,8 @@ class Analysis:
         None.
 
         """
-        self.likes_media = likes_media
-        self.likes_comment = likes_comment
+        self.media_likes = media_likes
+        self.comment_likes = comment_likes
         self.comments = comments
         self.comment_mode = comment_mode
         self.stories = stories
@@ -156,6 +208,10 @@ class Analysis:
         self.post_mode = post_mode
         self.direct = direct
         self.chaining_seen = chaining_seen
+        self.messages = messages
+        self.message_mode_user = message_mode_user
+        self.followers = followers
+        self.following = following
         self.print_latex = print_latex
         
         self.min_year, self.max_year = self.__min_max_year__()
@@ -187,11 +243,11 @@ class Analysis:
         Parameters
         ----------
         slice_match : Slice
-            DESCRIPTION.
+            The slice of the datetime to compare.
         match : String
-            DESCRIPTION.
+            What should the datetime fragment equal.
         slice_keep : Slice
-            DESCRIPTION.
+            What slice of the datetime should be returned.
         return_ints : Boolean, optional
             Should the list being returned be a list of integers. The default is True.
 
@@ -201,37 +257,38 @@ class Analysis:
             A list of selected fragments of the datetime.
 
         """
-        like_times = []
-        if self.likes_media:
+        time_data = []
+        if self.media_likes:
             for x in range(len(self.likes_json_data["media_likes"])):
                 if self.likes_json_data["media_likes"][x][0][slice_match] == match:
-                    like_times.append(self.likes_json_data["media_likes"][x][0][slice_keep])
-        if self.likes_comment:
+                    time_data.append(self.likes_json_data["media_likes"][x][0][slice_keep])
+        if self.comment_likes:
             for x in range(len(self.likes_json_data["comment_likes"])):
                 if self.likes_json_data["comment_likes"][x][0][slice_match] == match:
-                    like_times.append(self.likes_json_data["comment_likes"][x][0][slice_keep])
+                    time_data.append(self.likes_json_data["comment_likes"][x][0][slice_keep])
            
         if self.comments:
             for x in range(len(self.comments_json_data["media_comments"])):
                 if self.comments_json_data["media_comments"][x][0][slice_match] == match:
-                    like_times.append(self.comments_json_data["media_comments"][x][0][slice_keep])
+                    time_data.append(self.comments_json_data["media_comments"][x][0][slice_keep])
                     
         if self.stories:
             for x in range(len(self.posts_json_data["stories"])):
                 if self.posts_json_data["stories"][x]["taken_at"][slice_match] == match:
-                    like_times.append(self.posts_json_data["stories"][x]["taken_at"][slice_keep])
-        if self.posts:
+                    time_data.append(self.posts_json_data["stories"][x]["taken_at"][slice_keep])
+                    
+        if self.posts: #see documentation at top about post modes
             previous_datetime = ""
             previous_caption = ""
             for x in range(len(self.posts_json_data["photos"])):
-                if self.post_mode == "multiple": #see documentation at top about post modes
+                if self.post_mode == "multiple": 
                     if self.posts_json_data["photos"][x]["taken_at"][slice_match] == match:
-                        like_times.append(self.posts_json_data["photos"][x]["taken_at"][slice_keep])
+                        time_data.append(self.posts_json_data["photos"][x]["taken_at"][slice_keep])
                 elif self.post_mode == "single":
                     current_datetime = self.posts_json_data["photos"][x]["taken_at"][0:13]
                     current_caption = self.posts_json_data["photos"][x]["caption"]
                     if current_datetime[slice_match] == match and current_datetime != previous_datetime and current_caption != previous_caption:
-                        like_times.append(current_datetime[slice_keep])
+                        time_data.append(current_datetime[slice_keep])
                     previous_datetime = current_datetime
                     previous_caption = current_caption
                         
@@ -239,17 +296,33 @@ class Analysis:
         if self.direct:
             for x in range(len(self.posts_json_data["direct"])):
                 if self.posts_json_data["direct"][x]["taken_at"][slice_match] == match:
-                    like_times.append(self.posts_json_data["direct"][x]["taken_at"][slice_keep])
+                    time_data.append(self.posts_json_data["direct"][x]["taken_at"][slice_keep])
         
         if self.chaining_seen:
             for x in range(len(self.seen_content_json_data["chaining_seen"])):
                 if self.seen_content_json_data["chaining_seen"][x]["timestamp"][slice_match] == match:
-                    like_times.append(self.seen_content_json_data["chaining_seen"][x]["timestamp"][slice_keep])
+                    time_data.append(self.seen_content_json_data["chaining_seen"][x]["timestamp"][slice_keep])
+                    
+        if self.messages: #see documentation at top about messages
+            for x in range(len(self.messages_json_data)):
+                for y in range(len(self.messages_json_data[x]["conversation"])):
+                    if self.messages_json_data[x]["conversation"][y]["created_at"][slice_match] == match and self.messages_json_data[x]["conversation"][y]["sender"] == self.username:
+                        time_data.append(self.messages_json_data[x]["conversation"][y]["created_at"][slice_keep])
+        
+        if self.followers:
+            for key in self.connections_json_data["followers"].keys():
+                if self.connections_json_data["followers"][key][slice_match] == match:
+                    time_data.append(self.connections_json_data["followers"][key][slice_keep])
+        
+        if self.following:
+            for key in self.connections_json_data["following"].keys():
+                if self.connections_json_data["following"][key][slice_match] == match:
+                    time_data.append(self.connections_json_data["following"][key][slice_keep])
 
         if return_ints:
-            return list(map(int,like_times)) #turns list of strings into list of integers
+            return list(map(int,time_data)) #turns list of strings into list of integers
         else:
-            return like_times
+            return time_data
         
     def __data_user__(self):
         """
@@ -262,43 +335,72 @@ class Analysis:
             A list of users.
 
         """
-        likes_users = []
-        if self.likes_media:
+        user_data = []
+        if self.media_likes:
             for x in range(len(self.likes_json_data["media_likes"])):
-                likes_users.append(self.likes_json_data["media_likes"][x][1])
+                user_data.append(self.likes_json_data["media_likes"][x][1])
                 
-        if self.likes_comment:
+        if self.comment_likes:
             for x in range(len(self.likes_json_data["comment_likes"])):
-                likes_users.append(self.likes_json_data["comment_likes"][x][1])
+                user_data.append(self.likes_json_data["comment_likes"][x][1])
                 
-        if self.comments:
+        if self.comments: #see documentation at top of file about comment modes
             for x in range(len(self.comments_json_data["media_comments"])):
-                if self.comment_mode == "post": #see documentation at top of file about comment modes
-                    likes_users.append(self.comments_json_data["media_comments"][x][2])
+                if self.comment_mode == "post":
+                    user_data.append(self.comments_json_data["media_comments"][x][2])
                 elif self.comment_mode == "reply":
                     #The following line gets the first word of each comment and removes the first character
                     #which should be an @ if you are replying to someone and adds the rest of the word
                     #which should be a username (but isn't always if it is a top level comment)
-                    likes_users.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
+                    user_data.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
                 elif self.comment_mode == "smart":
                     if self.comments_json_data["media_comments"][x][1].split(" ")[0][0] == "@":
-                        likes_users.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
+                        user_data.append(self.comments_json_data["media_comments"][x][1].split(" ")[0][1:])
                     else:
-                        likes_users.append(self.comments_json_data["media_comments"][x][2])
+                        user_data.append(self.comments_json_data["media_comments"][x][2])
                         
         if self.chaining_seen:
             for x in range(len(self.seen_content_json_data["chaining_seen"])):
-                likes_users.append(self.seen_content_json_data["chaining_seen"][x]["username"])
+                user_data.append(self.seen_content_json_data["chaining_seen"][x]["username"])
                 
-        return likes_users
+        if self.messages: #the user message mode is explained in documentation at top
+            if self.message_mode_user == "sender_individual" or self.message_mode_user == "sender_both":
+                for x in range(len(self.messages_json_data)):
+                    if len(self.messages_json_data[x]["participants"]) == 2:
+                        for y in range(len(self.messages_json_data[x]["conversation"])):
+                            user_data.append(self.messages_json_data[x]["conversation"][y]["sender"])
+            if self.message_mode_user == "sender_group" or self.message_mode_user == "sender_both":
+                for x in range(len(self.messages_json_data)):
+                    if len(self.messages_json_data[x]["participants"]) > 2:
+                        for y in range(len(self.messages_json_data[x]["conversation"])):
+                            user_data.append(self.messages_json_data[x]["conversation"][y]["sender"])
+            if self.message_mode_user == "participants_individual" or self.message_mode_user == "participants_both":
+                 for x in range(len(self.messages_json_data)):
+                    if len(self.messages_json_data[x]["participants"]) == 2:
+                        user_data.append(self.messages_json_data[x]["participants"][0])
+                        user_data.append(self.messages_json_data[x]["participants"][1])
+            if self.message_mode_user == "participants_group" or self.message_mode_user == "participants_both":
+                 for x in range(len(self.messages_json_data)):
+                    if len(self.messages_json_data[x]["participants"]) > 2:
+                        for y in range (len(self.messages_json_data[x]["participants"])):
+                            user_data.append(self.messages_json_data[x]["participants"][y])
+                            
+        if self.followers:
+            for key in self.connections_json_data["followers"].keys():
+                user_data.append(key)
+                
+        if self.following:
+            for key in self.connections_json_data["following"].keys():
+                user_data.append(key)
+        return user_data
     
-    def __graph__(self,like_times,date,xlabel,style = "-b",unique = False):#, xticks = range(min(like_times),max(like_times))):
+    def __graph__(self,time_data,date,xlabel,style = "-b",unique = False, xtick_max = 0):
         """
         This private method plots the line graph of the data with nice formatting.
 
         Parameters
         ----------
-        like_times : tuple or list
+        time_data : tuple or list
             The data to be plotted.
         date : string
             The period the data covers to add to the title.
@@ -308,43 +410,47 @@ class Analysis:
             How the graph should look(shape of crosses, line graph vs scatter ect). The default is "-b".
         unique : Boolean, optional
             If np.unique been not been done already?. The default is False.
+        xtick_max : integer, optional
+            What should the xticks go up to from 0 (if 0 default behaviour is used). The default is 0.
 
         Returns
         -------
         None.
 
         """
-        if like_times == [] or like_times == ([],[]):
+        if time_data == [] or time_data == ([],[]):
             print("Error: No data to plot a line graph")
             return
         if unique:
-            time,like_counts = like_times
+            time,like_counts = time_data
         else:
-            time,like_counts = np.unique(like_times, return_counts=True)
+            time,like_counts = np.unique(time_data, return_counts=True)
             
         plt.plot(time,like_counts,style)
+        if xtick_max != 0:
+            plt.xticks(range(0,24))
         #plt.xticks((time[0],time[5],time[10],time[15],time[20]))
-        plt.xticks(range(0,24))
+        
         plt.xlabel(xlabel)
-        if self.likes_media and self.likes_comment:
+        if self.media_likes and self.comment_likes:
             plt.title("Number of posts & comments liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Posts & Comments Liked")
-        elif self.likes_media:
+        elif self.media_likes:
             plt.title("Number of posts liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Posts Liked")
-        elif self.likes_comment:
+        elif self.comment_likes:
             plt.title("Number of comments liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Comments Liked")
         plt.show()
-        #plt.savefig("F:\ExeterMathsSchool\My Data Individual EMC\graphs\likes_media_months_"+year)
+        #plt.savefig("F:\ExeterMathsSchool\My Data Individual EMC\graphs\media_likes_months_"+year)
         
-    def __graph_boxplot__(self,like_times,date,xlabel):
+    def __graph_boxplot__(self,time_data,date,xlabel):
         """
         This private method plots the boxplot of the data with nice formatting.
 
         Parameters
         ----------
-        like_times : list of integers
+        time_data : list of integers
             The data to be plotted.
         date : string
             When the data is from.
@@ -356,62 +462,69 @@ class Analysis:
         None.
 
         """
-        if like_times == []:
+        if time_data == []:
             print("Error: No data to make a boxplot")
             return
-        plt.boxplot(like_times,vert=False)
+        plt.boxplot(time_data,vert=False)
         plt.xticks(range(0,24))
-        #plt.xticks(range(min(like_times),max(like_times)))
-        if self.likes_media and self.likes_comment:
+        #plt.xticks(range(min(time_data),max(time_data)))
+        if self.media_likes and self.comment_likes:
             plt.title("Number of posts & comments liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Posts & Comments Liked")
-        elif self.likes_media:
+        elif self.media_likes:
             plt.title("Number of posts liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Posts Liked")
-        elif self.likes_comment:
+        elif self.comment_likes:
             plt.title("Number of comments liked per " +xlabel+ " in "+date)
             plt.ylabel("Number of Comments Liked")
         plt.xlabel(xlabel)
         plt.show()
         
-    def __table__(self,like_times,missing_times=0,sort_by_likes=False,max_rows=1000):
+    def __table__(self, data, missing_times=0, sort_by_likes=False, sort="asc", max_rows=100):
         """
         Produces a full table of the selected data including summary statistics.
 
         Parameters
         ----------
-        like_times : list of integers
+        data : list of integers
             The data being analized.
         missing_times : integer, optional
             The number of missing 0's. The default is 0.
+        sort_by_likes : boolean, optional
+            Should the table be sorted by like counts. The default is False.
         max_rows : integer, optional
-            The maximum number of rows that should be displayed. The default is 1000.
+            The maximum number of rows that should be displayed. The default is 100.
             
         Returns
         -------
         None.
 
         """
-        if like_times == []:
+        if data == []:
             print("Error: No data to make table")
             return
-        time, like_counts = np.unique(like_times, return_counts=True)
+        time, like_counts = np.unique(data, return_counts=True)
         if sort_by_likes:
             like_counts, time = zip( *sorted( zip(like_counts, time), reverse=True ) )
             
         print("time like_counts")
-        for i in range(min(len(time),100)): #only prints first 100 results
-            print(time[i],like_counts[i])
+        if sort == "asc":
+            for i in range(min(len(time),max_rows)):
+                print(time[i],like_counts[i])
+        else:
+            for i in range(len(time)-1,(len(time)-max_rows),-1):
+                print(time[i],like_counts[i])
         
         if missing_times == 0:
             print("Please enter the amount of missing times for the table above:")
             print("Enter 0 if all the times/dates appear")
             missing_times = int(input(">>>"))
-        for x in range(0,min(missing_times,max_rows)):
+        for x in range(0,missing_times):
             like_counts = np.append(like_counts,[0])
         
         print("Total", sum(like_counts))
-        print("Mean", statistics.mean(like_counts))
+        print("n",len(time))
+        print("Mean", np.mean(like_counts))
         print("Median", statistics.median(like_counts))
         print("SD",statistics.pstdev(like_counts)) #population standard deviation
         print("Range",max(like_counts)-min(like_counts))
@@ -423,11 +536,51 @@ class Analysis:
             for i in range(min(len(time),max_rows)):
                 print(time[i],"&",like_counts[i],"\\\\",end="")
             print("\hline Total &",sum(like_counts),"\\\\")
-            print("\hline Mean &",statistics.mean(like_counts),"\\\\")
+            print("\hline Mean &",np.mean(like_counts),"\\\\")
+            print("\hline n &",len(time),"\\\\")
             print("Median &", statistics.median(like_counts),"\\\\")
             print("SD & ",statistics.pstdev(like_counts),"\\\\")
             print("Range & ",max(like_counts)-min(like_counts),"\\\\")
             print(""" \hline\n\end{tabular}\n\end{table}""")
+            
+    def json_file_structure(self, json_data, tabs=0):
+        """
+        Prints the file structure of a JSON file that has been opened using recursion.
+
+        Parameters
+        ----------
+        json_data : dictionary
+            An opened JSON file eg likes_json_data.
+        tabs : integer, optional
+            How many tabs should be displayed. The default is 0.
+
+        Returns
+        -------
+        None.
+
+        """
+        if type(json_data) is dict:
+            for key in json_data.keys():
+                print("\t"*tabs+key)
+                self.json_file_structure(json_data[key],tabs=tabs+1)
+        elif type(json_data) is list:
+            keys = []
+            for i in range(len(json_data)):
+                if type(json_data[i]) is dict:
+                    if json_data[i].keys() not in keys:
+                        keys.append(json_data[i].keys())
+                        
+                        self.json_file_structure(json_data[i],tabs=tabs+1)
+                        print("\t"*tabs+str(json_data[i].keys()))
+                else:
+                    print("\t"*tabs+"["+ str(i) +"]")
+                    self.json_file_structure(json_data[i],tabs=tabs+1)
+            if len(keys) > 1:
+                print("\t"*tabs+str(keys))
+            
+            
+        else:
+            print("\t"*tabs+str(json_data).replace("\n","\\\\"))
             
     def profile_summary(self):
         """
@@ -509,13 +662,13 @@ class Analysis:
 
         """
         if len(year_month_day) == 10:
-            like_times = self.__data_time__(slice(0,10),year_month_day,slice(11,16),return_ints=False)
+            time_data = self.__data_time__(slice(0,10),year_month_day,slice(11,16),return_ints=False)
         elif len(year_month_day) == 7:#year-month
-            like_times = self.__data_time__(slice(0,7),year_month_day,slice(11,16),return_ints=False)
+            time_data = self.__data_time__(slice(0,7),year_month_day,slice(11,16),return_ints=False)
         else:
-            like_times = self.__data_time__(slice(10,11),"T",slice(11,16),return_ints=False)
-        #self.__graph__(like_times,year_month_day,"Hour:Minute")
-        self.__table__(like_times)
+            time_data = self.__data_time__(slice(10,11),"T",slice(11,16),return_ints=False)
+        #self.__graph__(time_data,year_month_day,"Hour:Minute")
+        self.__table__(time_data)
         
     def hours(self,year_month_day):
         """
@@ -532,18 +685,18 @@ class Analysis:
 
         """
         if len(year_month_day) == 10:#year-month-day
-            like_times = self.__data_time__(slice(0,10),year_month_day,slice(11,13))
+            time_data = self.__data_time__(slice(0,10),year_month_day,slice(11,13))
         elif len(year_month_day) == 7:#year-month
-            like_times = self.__data_time__(slice(0,7),year_month_day,slice(11,13))
+            time_data = self.__data_time__(slice(0,7),year_month_day,slice(11,13))
         elif len(year_month_day) == 4:#year
-            like_times = self.__data_time__(slice(0,4),year_month_day,slice(11,13))
+            time_data = self.__data_time__(slice(0,4),year_month_day,slice(11,13))
         else:#all of time
-            like_times = self.__data_time__(slice(10,11),"T",slice(11,13))
+            time_data = self.__data_time__(slice(10,11),"T",slice(11,13))
             year_month_day = "all time"
             
-        self.__graph__(like_times,year_month_day,"Hour")
-        self.__table__(like_times,missing_times=(24-len(np.unique(like_times))))
-        self.__graph_boxplot__(like_times,year_month_day,"Hour")
+        self.__graph__(time_data,year_month_day,"Hour",xtick_max=24)
+        self.__table__(time_data,missing_times=(24-len(np.unique(time_data))))
+        self.__graph_boxplot__(time_data,year_month_day,"Hour")
     
     def day_of_week_hours(self,year_month,graph_per_day=False):
         """
@@ -563,13 +716,13 @@ class Analysis:
         """
         days_of_week = []
         if len(year_month) == 4:
-            like_times = self.__data_time__(slice(0,4),year_month,slice(5,13),return_ints=False)#,return_counts=True)
-            for month_day in like_times:
+            time_data = self.__data_time__(slice(0,4),year_month,slice(5,13),return_ints=False)#,return_counts=True)
+            for month_day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(month_day[:2]),int(month_day[3:5]))
                 days_of_week.append([day_datetime.isoweekday(),month_day[-2:]])
         else:
-            like_times = self.__data_time__(slice(0,7),year_month,slice(8,13),return_ints=False)        
-            for day in like_times:
+            time_data = self.__data_time__(slice(0,7),year_month,slice(8,13),return_ints=False)        
+            for day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day[:2]))
                 days_of_week.append([day_datetime.isoweekday(),day[-2:]])
                 
@@ -580,19 +733,19 @@ class Analysis:
                     hours[day_of_week-1].append(day_of_week_hour[1])
             hours[day_of_week-1] = list(map(int,hours[day_of_week-1]))
             if graph_per_day:
-                self.__graph__(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)))
+                self.__graph__(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
                 self.__graph_boxplot__(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)))
                 print("Day of week",day_of_week)
                 self.__table__(hours[day_of_week-1],missing_times=(24-len(np.unique(hours[day_of_week-1]))))
         
         workday_hours = hours[0]+hours[1]+hours[2]+hours[3]+hours[4]
-        self.__graph__(workday_hours,year_month,"hour during the week(Monday-Friday)")
+        self.__graph__(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
         self.__graph_boxplot__(workday_hours,year_month,"hour during the week(Monday-Friday)")
         print("Weekdays(Monday-Friday)")
         self.__table__(workday_hours,missing_times=(24-len(np.unique(workday_hours))))
         
         weekend_hours = hours[5] + hours[6]
-        self.__graph__(weekend_hours,year_month,"hour during the weekend")
+        self.__graph__(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
         self.__graph_boxplot__(weekend_hours,year_month,"hour during the weekend")
         print("Weekend")
         self.__table__(weekend_hours,missing_times=(24-len(np.unique(weekend_hours))))
@@ -614,13 +767,13 @@ class Analysis:
         """
         day_of_week = []
         if len(year_month) == 4:
-            like_times = self.__data_time__(slice(0,4),year_month,slice(5,10),return_ints=False)
-            for month_day in like_times:
+            time_data = self.__data_time__(slice(0,4),year_month,slice(5,10),return_ints=False)
+            for month_day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(month_day[:2]),int(month_day[3:]))
                 day_of_week.append(day_datetime.isoweekday())
         else:
-            like_times = self.__data_time__(slice(0,7),year_month,slice(8,10),return_ints=False)        
-            for day in like_times:
+            time_data = self.__data_time__(slice(0,7),year_month,slice(8,10),return_ints=False)        
+            for day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day))
                 day_of_week.append(day_datetime.isoweekday())
         self.__graph__(day_of_week,year_month,"Day of Week")#,style = "xb")
@@ -640,10 +793,10 @@ class Analysis:
         None.
 
         """
-        like_times = self.__data_time__(slice(0,7),year_month,slice(8,10))
-        self.__graph__(like_times,year_month,"Day")
-        self.__graph_boxplot__(like_times,year_month,"Day")
-        self.__table__(like_times)
+        time_data = self.__data_time__(slice(0,7),year_month,slice(8,10))
+        self.__graph__(time_data,year_month,"Day")
+        self.__graph_boxplot__(time_data,year_month,"Day")
+        self.__table__(time_data)
         
     def top_days(self,number_of_days=25):
         """
@@ -659,8 +812,8 @@ class Analysis:
         None.
 
         """
-        like_times = self.__data_time__(slice(10,11),"T",slice(0,10),return_ints=False)
-        self.__table__(like_times,max_rows=number_of_days,sort_by_likes=True)
+        time_data = self.__data_time__(slice(10,11),"T",slice(0,10),return_ints=False)
+        self.__table__(time_data,max_rows=number_of_days,sort_by_likes=True)
         
     def days_range(self,start_date,finish_date): 
         """ 
@@ -680,7 +833,7 @@ class Analysis:
         None.
 
         """
-        like_times = []
+        time_data = []
         if start_date[0:5] == finish_date[0:5]:
             for month in range(int(start_date[5:7]),int(finish_date[5:7])+1):
                 month = str(month)
@@ -690,41 +843,41 @@ class Analysis:
                         day = str(day)
                         day = "0"*(2-len(day)) + day
                         match_date = start_date[0:5] + month + "-" +day
-                        like_times += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
+                        time_data += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
                 elif month == start_date[5:7]: #if on starting month
                     for day in range(int(start_date[8:10]),32):
                         day = str(day)
                         day = "0"*(2-len(day)) + day
                         match_date = start_date[0:5] + month + "-" +day
-                        like_times += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
+                        time_data += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
                 elif month == finish_date[5:7]: #if on finishing month
                     for day in range(1,int(finish_date[8:10])+1):
                         day = str(day)
                         day = "0"*(2-len(day)) + day
                         match_date = start_date[0:5] + month + "-" +day
-                        like_times += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
+                        time_data += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
                 else:
                     for day in range(0,32): #include all days in month
                         day = str(day)
                         day = "0"*(2-len(day)) + day
                         match_date = start_date[0:5] + month + "-" +day
-                        like_times += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
+                        time_data += self.__data_time__(slice(0,10),match_date,slice(5,10),return_ints=False)
         else:
             for day in range(int(start_date[8:10]),32): #include all days in starting month
                 day = str(day)
                 day = "0"*(2-len(day)) + day
                 match_date = start_date[0:8] + day
-                like_times += self.__data_time__(slice(0,10),match_date,slice(0,10),return_ints=False)
+                time_data += self.__data_time__(slice(0,10),match_date,slice(0,10),return_ints=False)
             for day in range(1,int(finish_date[8:10])+1): #include all days in finishing month
                 day = str(day)
                 day = "0"*(2-len(day)) + day
                 match_date = finish_date[0:8] + day
-                like_times += self.__data_time__(slice(0,10),match_date,slice(0,10),return_ints=False)
+                time_data += self.__data_time__(slice(0,10),match_date,slice(0,10),return_ints=False)
             
-        self.__graph__(like_times,start_date+" to "+finish_date,"Day")
-        #self.__graph_boxplot__(like_times,start_date+" to "+finish_date,"Day")
+        self.__graph__(time_data,start_date+" to "+finish_date,"Day")
+        #self.__graph_boxplot__(time_data,start_date+" to "+finish_date,"Day")
         print("Between",start_date,"and",finish_date,"inclusive:")
-        self.__table__(like_times)
+        self.__table__(time_data)
         
     def months(self,year):
         """
@@ -741,28 +894,51 @@ class Analysis:
 
         """
         if len(year) == 4:
-            like_times = self.__data_time__(slice(0,4),year,slice(5,7))
+            time_data = self.__data_time__(slice(0,4),year,slice(5,7))
         else:
-            like_times = self.__data_time__(slice(10,11),"T",slice(0,7),return_ints=False)
+            time_data = self.__data_time__(slice(10,11),"T",slice(0,7),return_ints=False)
             year = "all time"
-        self.__graph__(like_times,year,"Month")
-        #self.__graph_boxplot__(like_times,year,"Month")
-        self.__table__(like_times)
+        self.__graph__(time_data,year,"Month")
+        #self.__graph_boxplot__(time_data,year,"Month")
+        self.__table__(time_data)
         
     def best_friends(self):
         """
-        Conducts best friends Analysis.
+        Conducts best friends analysis.
 
         Returns
         -------
         None.
 
         """
-        like_friends = self.__data_user__()
-        self.__table__(like_friends,sort_by_likes=True)
-        #add graphs?
+        user_data = self.__data_user__()
+        while self.username in user_data:
+            user_data.remove(self.username)
+        self.__table__(user_data,sort_by_likes=True) #add graphs?
+        
+    def worst_friends(self):
+        """
+        Conducts worst friend analysis (basically same as best friend but sorting low to high).
+
+        Returns
+        -------
+        None.
+
+        """
+        user_data = self.__data_user__()
+        while self.username in user_data:
+            user_data.remove(self.username)
+        self.__table__(user_data,sort_by_likes=True,sort="desc")
         
     def auto_analysis_time(self):
+        """
+        Conducts all time analysis for all time and yearly for each year.
+
+        Returns
+        -------
+        None.
+
+        """
         self.timezone_test()
         #do all time analysis here
         self.hours("")
@@ -778,17 +954,21 @@ class Analysis:
         print("#"*10,"Automated Analysis Finished","#"*10)
         
 
-analysis_object = Analysis()
+analysis_object = Analysis()#media_likes = False, comment_likes = False, comments = False, stories = False, 
+                 #posts = False, direct = False, messages = True, chaining_seen = False, followers = False)
 #analysis_object.months("")
 #analysis_object.days_range("2018-12-27","2019-01-06") #AMC 2018
 #analysis_object.days_range("2019-12-27","2020-01-05") #AMC 2019
 #analysis_object.best_friends()
-#analysis_object.weekdays_hours("2020-03")
+#analysis_object.worst_friends()
+#analysis_object.day_of_week_hours("2020")
 analysis_object.auto_analysis_time()
 #analysis_object.timezone_test()
 #analysis_object.hours("2020-01")
 #analysis_object.top_days()
 #analysis_object.profile_summary()
+#analysis_object.date_range()
+#analysis_object.json_file_structure(analysis_object.connections_json_data["dismissed_suggested_users"])
 
 #for x in range(1,5):
 #    for y in range(1,32):
