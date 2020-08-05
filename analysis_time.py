@@ -32,6 +32,7 @@ Post Mode (self.post_mode) Documentation
 """
 
 import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics
+import util
 
 class AnalysisTime:
     def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
@@ -147,10 +148,6 @@ class AnalysisTime:
         See __init__ documentation.
         settings : Tuple, optional
             A tuple of all the other parameters that is generated from read_settings().
-
-        Returns
-        -------
-        None.
 
         """
         if settings != ():
@@ -304,152 +301,7 @@ class AnalysisTime:
             return list(map(int,time_data)) #turns list of strings into list of integers
         else:
             return time_data
-
-    def _graph(self,time_data,date,xlabel,style = "-b",unique = False, xtick_max = 0):
-        """
-        This private method plots the line graph of the data with nice formatting.
-
-        Parameters
-        ----------
-        time_data : tuple or list
-            The data to be plotted.
-        date : string
-            The period the data covers to add to the title.
-        xlabel : string
-            Self-explanatory.
-        style : string, optional
-            How the graph should look(shape of crosses, line graph vs scatter ect). The default is "-b".
-        unique : Boolean, optional
-            If np.unique been not been done already?. The default is False.
-        xtick_max : integer, optional
-            What should the xticks go up to from 0 (if 0 default behaviour is used). The default is 0.
-
-        Returns
-        -------
-        None.
-
-        """
-        if time_data == [] or time_data == ([],[]):
-            print("Error: No data to plot a line graph")
-            return
-        if unique:
-            time,like_counts = time_data
-        else:
-            time,like_counts = np.unique(time_data, return_counts=True)
-            
-        plt.plot(time,like_counts,style)
-        if xtick_max != 0:
-            plt.xticks(range(0,24))
-        #plt.xticks((time[0],time[5],time[10],time[15],time[20]))
-        
-        plt.xlabel(xlabel)
- 
-        plt.title("Activity per " +xlabel+ " in "+date)
-        plt.ylabel("Activity")
-        
-        plt.show()
-        #plt.savefig("D:\ExeterMathsSchool\My Data Individual EMC\graphs\media_likes_months_"+year)
-        
-    def _graph_boxplot(self,time_data,date,xlabel, xtick_max=0):
-        """
-        This private method plots the boxplot of the data with nice formatting.
-
-        Parameters
-        ----------
-        time_data : list of integers
-            The data to be plotted.
-        date : string
-            When the data is from.
-        xlabel : string
-            Self-explanatory.
-        xtick_max : integer, optional
-            What should the xticks go up to from 0 (if 0 default behaviour is used). The default is 0.
-
-        Returns
-        -------
-        None.
-
-        """
-        if time_data == []:
-            print("Error: No data to make a boxplot")
-            return
-        plt.boxplot(time_data,vert=False)
-        if xtick_max != 0:
-            plt.xticks(range(0,xtick_max))
-        #plt.xticks(range(min(time_data),max(time_data)))
-        plt.xlabel(xlabel)
-        plt.title("Activity per " +xlabel+ " in "+date)
-        plt.ylabel("Activity")
-        plt.yticks([])#This removes the 1 on the y-axis which is there by default
-        plt.show()
-        
-    def _table(self, data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100):
-        """
-        Produces a full table of the selected data including summary statistics.
-
-        Parameters
-        ----------
-        data : list of integers
-            The data being analized.
-        missing_data_items : integer, optional
-            The number of missing 0's. The default is 0.
-        sort_by_likes : boolean, optional
-            Should the table be sorted by like counts. The default is False.
-        max_rows : integer, optional
-            The maximum number of rows that should be displayed. The default is 100.
-            
-        Returns
-        -------
-        None.
-
-        """
-        if data == []:
-            print("Error: No data to make table")
-            return
-        data_item, data_frequency = np.unique(data, return_counts=True)
-        if sort_by_likes:
-            data_frequency, data_item = zip( *sorted( zip(data_frequency, data_item), reverse=True ) )
-            
-        print("data_item data_frequency")
-        if sort == "asc":
-            for i in range(min(len(data_item),max_rows)):
-                print(data_item[i],data_frequency[i])
-        else:   #descending order
-            for i in range(len(data_item)-1,(len(data_item)-max_rows),-1):
-                print(data_item[i],data_frequency[i])
-        
-        if missing_data_items == 0:
-            print("Please enter the amount of missing data items for the table above:")
-            print("Enter 0 if all the data items appear")
-            missing_data_items = int(input(">>>"))
-        for x in range(0,missing_data_items):
-            data_frequency = np.append(data_frequency,[0])
-        
-        print("Total", sum(data_frequency))
-        print("n",len(data_item))
-        print("Mean", np.mean(data_frequency))
-        print("Median", statistics.median(data_frequency))
-        print("SD",statistics.pstdev(data_frequency)) #population standard deviation
-        print("Range",max(data_frequency)-min(data_frequency))
-        print("Note:", missing_data_items,"missing 0's were added for the purpose of calulations")
-        
-        if self.print_latex:
-            print("\n","#"*20,"Latex","#"*20)
-            print("""\\begin{table}[h]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c| } \n \hline TBC & TBC""")
-            if sort == "asc":
-                for i in range(min(len(data_item),max_rows)):
-                    print(data_item[i],"&",data_frequency[i],"\\\\",end="")
-            else:   #descending order
-                for i in range(len(data_item)-1,(len(data_item)-max_rows),-1):
-                    print(data_item[i],"&",data_frequency[i],"\\\\",end="")
-            print("\hline Total &",sum(data_frequency),"\\\\")
-            print("\hline Mean &",np.mean(data_frequency),"\\\\")
-            print("\hline n &",len(data_item),"\\\\")
-            print("Median &", statistics.median(data_frequency),"\\\\")
-            print("SD & ",statistics.pstdev(data_frequency),"\\\\")
-            print("Range & ",max(data_frequency)-min(data_frequency),"\\\\")
-            print(""" \hline\n\end{tabular}\n\end{table}""")
-            
+                    
     def json_file_structure(self, json_data, tabs=0):
         """
         Prints the file structure of a JSON file that has been opened using recursion.
@@ -460,10 +312,6 @@ class AnalysisTime:
             An opened JSON file eg likes_json_data.
         tabs : integer, optional
             How many tabs should be displayed. The default is 0.
-
-        Returns
-        -------
-        None.
 
         """
         if type(json_data) is dict:
@@ -493,10 +341,6 @@ class AnalysisTime:
         """
         Prints all of the timezones when I liked a post/comment.
 
-        Returns
-        -------
-        None.
-
         """
         timezones = self._data_time(slice(10,11), "T", slice(19,26), return_ints=False)
         print("This is a list of all the times zones for which there is a piece of data:")
@@ -505,10 +349,6 @@ class AnalysisTime:
     def date_range(self):
         """
         Prints the oldest and most recent piece of data and the time between.
-
-        Returns
-        -------
-        None.
 
         """
         dates = self._data_time(slice(10,11), "T", slice(0,19), return_ints=False)
@@ -528,10 +368,6 @@ class AnalysisTime:
         year_month_day : string
             The data to match - can be YYYY-MM-DD, YYYY-MM or empty for all time.
 
-        Returns
-        -------
-        None.
-
         """
         if len(year_month_day) == 10:
             time_data = self._data_time(slice(0,10),year_month_day,slice(11,16),return_ints=False)
@@ -539,8 +375,8 @@ class AnalysisTime:
             time_data = self._data_time(slice(0,7),year_month_day,slice(11,16),return_ints=False)
         else:
             time_data = self._data_time(slice(10,11),"T",slice(11,16),return_ints=False)
-        #self._graph(time_data,year_month_day,"Hour:Minute")
-        self._table(time_data)
+        #util.graph(time_data,year_month_day,"Hour:Minute")
+        util.table(time_data,print_latex=self.print_latex)
         
     def hours(self,year_month_day):
         """
@@ -550,10 +386,6 @@ class AnalysisTime:
         ----------
         year_month_day : string
             The data to match - can be YYYY-MM-DD, YYYY-MM, YYYY or empty for all time..
-
-        Returns
-        -------
-        None.
 
         """
         if len(year_month_day) == 10:#year-month-day
@@ -566,9 +398,9 @@ class AnalysisTime:
             time_data = self._data_time(slice(10,11),"T",slice(11,13))
             year_month_day = "all time"
             
-        self._graph(time_data,year_month_day,"Hour",xtick_max=24)
-        self._table(time_data,missing_data_items=(24-len(np.unique(time_data))))
-        self._graph_boxplot(time_data,year_month_day,"Hour",xtick_max=24)
+        util.graph(time_data,year_month_day,"Hour",xtick_max=24)
+        util.table(time_data,missing_data_items=(24-len(np.unique(time_data))),print_latex=self.print_latex)
+        util.graph_boxplot(time_data,year_month_day,"Hour",xtick_max=24)
     
     def day_of_week_hours(self,year_month,graph_per_day=False):
         """
@@ -580,10 +412,6 @@ class AnalysisTime:
             The data to match YYYY or YYYY-MM.
         graph_per_day : boolean, optional
             Should a graph/table be produced for each day of the week. The default is False.
-
-        Returns
-        -------
-        None.
 
         """
         days_of_week = []
@@ -605,22 +433,22 @@ class AnalysisTime:
                     hours[day_of_week-1].append(day_of_week_hour[1])
             hours[day_of_week-1] = list(map(int,hours[day_of_week-1]))
             if graph_per_day:
-                self._graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
-                self._graph_boxplot(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
+                util.graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
+                util.graph_boxplot(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
                 print("Day of week",day_of_week)
-                self._table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))))
+                util.table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))),print_latex=self.print_latex)
         
         workday_hours = hours[0]+hours[1]+hours[2]+hours[3]+hours[4]
-        self._graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
-        self._graph_boxplot(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
+        util.graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
+        util.graph_boxplot(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
         print("Weekdays(Monday-Friday)")
-        self._table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))))
+        util.table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))),print_latex=self.print_latex)
         
         weekend_hours = hours[5] + hours[6]
-        self._graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
-        self._graph_boxplot(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
+        util.graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
+        util.graph_boxplot(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
         print("Weekend")
-        self._table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))))
+        util.table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))),print_latex=self.print_latex)
         
     
     def day_of_week(self,year_month):
@@ -631,10 +459,6 @@ class AnalysisTime:
         ----------
         year_month : string
             The data to match YYYY or YYYY-MM.
-
-        Returns
-        -------
-        None.
 
         """
         day_of_week = []
@@ -648,8 +472,8 @@ class AnalysisTime:
             for day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day))
                 day_of_week.append(day_datetime.isoweekday())
-        self._graph(day_of_week,year_month,"Day of Week")#,style = "xb")
-        self._table(day_of_week)
+        util.graph(day_of_week,year_month,"Day of Week")#,style = "xb")
+        util.table(day_of_week,print_latex=self.print_latex)
         
     def days(self,year_month):
         """
@@ -660,15 +484,11 @@ class AnalysisTime:
         year_month : string
             The data to match - YYYY-MM.
 
-        Returns
-        -------
-        None.
-
         """
         time_data = self._data_time(slice(0,7),year_month,slice(8,10))
-        self._graph(time_data,year_month,"Day")
-        self._graph_boxplot(time_data,year_month,"Day")
-        self._table(time_data)
+        util.graph(time_data,year_month,"Day")
+        util.graph_boxplot(time_data,year_month,"Day")
+        util.table(time_data,print_latex=self.print_latex)
         
     def top_days(self,number_of_days=25):
         """
@@ -679,13 +499,9 @@ class AnalysisTime:
         number_of_days : string, optional
             The number of days to display. The default is 25.
 
-        Returns
-        -------
-        None.
-
         """
         time_data = self._data_time(slice(10,11),"T",slice(0,10),return_ints=False)
-        self._table(time_data,max_rows=number_of_days,sort_by_likes=True)
+        util.table(time_data,max_rows=number_of_days,sort_by_likes=True,print_latex=self.print_latex)
         
     def days_range(self,start_date,finish_date): 
         """ 
@@ -699,10 +515,6 @@ class AnalysisTime:
             The date to match - YYYY-MM-DD.
         finish_date : string
             The date to match - YYYY-MM-DD.
-
-        Returns
-        -------
-        None.
 
         """
         time_data = []
@@ -746,10 +558,10 @@ class AnalysisTime:
                 match_date = finish_date[0:8] + day
                 time_data += self._data_time(slice(0,10),match_date,slice(0,10),return_ints=False)
             
-        self._graph(time_data,start_date+" to "+finish_date,"Day")
-        #self._graph_boxplot(time_data,start_date+" to "+finish_date,"Day")
+        util.graph(time_data,start_date+" to "+finish_date,"Day")
+        #util.graph_boxplot(time_data,start_date+" to "+finish_date,"Day")
         print("Between",start_date,"and",finish_date,"inclusive:")
-        self._table(time_data)
+        util.table(time_data,print_latex=self.print_latex)
         
     def months(self,year):
         """
@@ -760,28 +572,19 @@ class AnalysisTime:
         year : string
             The data to match - can be YYYY or empty for all time.
 
-        Returns
-        -------
-        None.
-
         """
         if len(year) == 4:
             time_data = self._data_time(slice(0,4),year,slice(5,7))
         else:
             time_data = self._data_time(slice(10,11),"T",slice(0,7),return_ints=False)
             year = "all time"
-        self._graph(time_data,year,"Month")
-        #self._graph_boxplot(time_data,year,"Month")
-        self._table(time_data)
+        util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13)
+        #util.graph_boxplot(time_data,year,"Month")
+        util.table(time_data,print_latex=self.print_latex)
             
     def auto_analysis(self):
         """
         Conducts all time analysis for all time and yearly for each year.
-
-        Returns
-        -------
-        None.
-
         """
         self.timezone_test()
         #do all time analysis here
@@ -813,5 +616,5 @@ analysis_time_object = AnalysisTime(path="Instagram_data\\")#, media_likes = Fal
 #analysis_time_object.days("2020-01")
 #analysis_time_object.top_days()
 #analysis_time_object.days_range("2018-12-27","2019-01-06") #AMC 2018 ("2019-12-27","2020-01-05") #AMC 2019
-analysis_time_object.months("")
+analysis_time_object.months("2019")
 #analysis_time_object.auto_analysis()
