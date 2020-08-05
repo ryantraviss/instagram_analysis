@@ -377,113 +377,7 @@ class AnalysisUser:
                 user_data.append(key)
                 
         return user_data
-        
-    def _table(self, data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100):
-        """
-        Produces a full table of the selected data including summary statistics.
-
-        Parameters
-        ----------
-        data : list of integers
-            The data being analized.
-        missing_data_items : integer, optional
-            The number of missing 0's. The default is 0.
-        sort_by_likes : boolean, optional
-            Should the table be sorted by like counts. The default is False.
-        max_rows : integer, optional
-            The maximum number of rows that should be displayed. The default is 100.
-            
-        Returns
-        -------
-        None.
-
-        """
-        if data == []:
-            print("Error: No data to make table")
-            return
-        data_item, data_frequency = np.unique(data, return_counts=True)
-        if sort_by_likes:
-            data_frequency, data_item = zip( *sorted( zip(data_frequency, data_item), reverse=True ) )
-            
-        print("data_item data_frequency")
-        if sort == "asc":
-            for i in range(min(len(data_item),max_rows)):
-                print(data_item[i],data_frequency[i])
-        else:   #descending order
-            for i in range(len(data_item)-1,(len(data_item)-max_rows),-1):
-                print(data_item[i],data_frequency[i])
-        
-        if missing_data_items == 0:
-            print("Please enter the amount of missing data items for the table above:")
-            print("Enter 0 if all the data items appear")
-            missing_data_items = int(input(">>>"))
-        for x in range(0,missing_data_items):
-            data_frequency = np.append(data_frequency,[0])
-        
-        print("Total", sum(data_frequency))
-        print("n",len(data_item))
-        print("Mean", np.mean(data_frequency))
-        print("Median", statistics.median(data_frequency))
-        print("SD",statistics.pstdev(data_frequency)) #population standard deviation
-        print("Range",max(data_frequency)-min(data_frequency))
-        print("Note:", missing_data_items,"missing 0's were added for the purpose of calulations")
-        
-        if self.print_latex:
-            print("\n","#"*20,"Latex","#"*20)
-            print("""\\begin{table}[h]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c| } \n \hline TBC & TBC""")
-            if sort == "asc":
-                for i in range(min(len(data_item),max_rows)):
-                    print(data_item[i],"&",data_frequency[i],"\\\\",end="")
-            else:   #descending order
-                for i in range(len(data_item)-1,(len(data_item)-max_rows),-1):
-                    print(data_item[i],"&",data_frequency[i],"\\\\",end="")
-            print("\hline Total &",sum(data_frequency),"\\\\")
-            print("\hline Mean &",np.mean(data_frequency),"\\\\")
-            print("\hline n &",len(data_item),"\\\\")
-            print("Median &", statistics.median(data_frequency),"\\\\")
-            print("SD & ",statistics.pstdev(data_frequency),"\\\\")
-            print("Range & ",max(data_frequency)-min(data_frequency),"\\\\")
-            print(""" \hline\n\end{tabular}\n\end{table}""")
-            
-    def json_file_structure(self, json_data, tabs=0):
-        """
-        Prints the file structure of a JSON file that has been opened using recursion.
-
-        Parameters
-        ----------
-        json_data : dictionary
-            An opened JSON file eg likes_json_data.
-        tabs : integer, optional
-            How many tabs should be displayed. The default is 0.
-
-        Returns
-        -------
-        None.
-
-        """
-        if type(json_data) is dict:
-            for key in json_data.keys():
-                print("\t"*tabs+key)
-                self.json_file_structure(json_data[key],tabs=tabs+1)
-        elif type(json_data) is list:
-            keys = []
-            for i in range(len(json_data)):
-                if type(json_data[i]) is dict:
-                    if json_data[i].keys() not in keys:
-                        keys.append(json_data[i].keys())
-                        
-                        self.json_file_structure(json_data[i],tabs=tabs+1)
-                        print("\t"*tabs+str(json_data[i].keys()))
-                else:
-                    print("\t"*tabs+"["+ str(i) +"]")
-                    self.json_file_structure(json_data[i],tabs=tabs+1)
-            if len(keys) > 1:
-                print("\t"*tabs+str(keys))
-            
-            
-        else:
-            print("\t"*tabs+str(json_data).replace("\n","\\\\"))
-            
+       
     def profile_summary(self):
         """
         Prints a summary of your profile.
@@ -534,7 +428,7 @@ class AnalysisUser:
             user_data = self._data_user()
             while self.username in user_data:
                 user_data.remove(self.username)
-            self._table(user_data,sort_by_likes=True) #add graphs?
+            util.table(user_data,sort_by_likes=True) #add graphs?
         else:
             print("Error: This doesn't work with anonymised data!")
         
@@ -551,7 +445,7 @@ class AnalysisUser:
             user_data = self._data_user()
             while self.username in user_data:
                 user_data.remove(self.username)
-            self._table(user_data,sort_by_likes=True,sort="desc")
+            util.table(user_data,sort_by_likes=True,sort="desc")
         else:
             print("Error: This doesn't work with anonymised data!")
             
@@ -560,9 +454,10 @@ class AnalysisUser:
 analysis_object = AnalysisUser(path="Instagram_data\\")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
                          #posts = False, direct = False, messages = False, message_likes = True, chaining_seen = False, followers = False, following=False)
 #analysis_object.change_settings()
-analysis_object.read_settings()
-#analysis_object.json_file_structure(analysis_object.media_json_data["photos"])
+#analysis_object.read_settings()
 #analysis_object.profile_summary()
 #analysis_object.top_message()
 analysis_object.best_friends()
 #analysis_object.worst_friends()
+
+#util.json_file_structure(analysis_object.media_json_data["photos"])
