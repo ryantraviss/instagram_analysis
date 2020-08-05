@@ -145,3 +145,37 @@ def graph_boxplot(self,time_data,date,xlabel, xtick_max=0):
     plt.ylabel("Activity")
     plt.yticks([])#This removes the 1 on the y-axis which is there by default
     plt.show()
+
+def json_file_structure(json_data, tabs=0):
+    """
+    Prints the file structure of a JSON file that has been opened using recursion.
+
+    Parameters
+    ----------
+    json_data : dictionary
+        An opened JSON file eg likes_json_data.
+    tabs : integer, optional
+        How many tabs should be displayed. The default is 0.
+
+    """
+    if type(json_data) is dict:
+        for key in json_data.keys():
+            print("\t"*tabs+key)
+            json_file_structure(json_data[key],tabs=tabs+1)
+    elif type(json_data) is list:
+        keys = []
+        for i in range(len(json_data)):
+            if type(json_data[i]) is dict:
+                if json_data[i].keys() not in keys:
+                    keys.append(json_data[i].keys())
+                    
+                    json_file_structure(json_data[i],tabs=tabs+1)
+                    print("\t"*tabs+str(json_data[i].keys()))
+            else:
+                print("\t"*tabs+"["+ str(i) +"]")
+                json_file_structure(json_data[i],tabs=tabs+1)
+        if len(keys) > 1:
+            print("\t"*tabs+str(keys))
+        
+    else:
+        print("\t"*tabs+str(json_data).replace("\n","\\\\"))
