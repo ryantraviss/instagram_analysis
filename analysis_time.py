@@ -540,13 +540,56 @@ class AnalysisTime:
         """
         if len(year) == 4:
             time_data = self._data_time(slice(0,4),year,slice(5,7))
+            util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13)
         else:
             time_data = self._data_time(slice(10,11),"T",slice(0,7),return_ints=False)
             year = "all time"
-        util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13)
+            util.graph(time_data,year,"Month")
         #util.graph_boxplot(time_data,year,"Month")
         util.table(time_data,print_latex=self.print_latex)
+        
+    def years(self):
+        """
+        Conducts analysis on years.
+        """
+        time_data = self._data_time(slice(10,11),"T",slice(0,4))
+        util.graph(time_data,"all time","Year",xtick_min=self.min_year,xtick_max=self.max_year+1)
+        util.table(time_data,print_latex=self.print_latex)
+        
+    def connections(self,followers,following,year):
+        """
+        Conducts analysis on connections.
+
+        Parameters
+        ----------
+        followers : boolean
+            Should followers be used.
+        following : boolean
+            Should following be used.
+        year : string
+            The year (or all time if empty) to analyise.
+
+        """
+        original_settings = self.read_settings()
+        if followers and following:
+            print("Connections Analysis")
+            self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, True, True, False))
+        elif followers:
+            print("Followers Analysis")
+            self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, True, False, False))
+        elif following:
+            print("Following Analysis")
+            self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, False, True, False))
+        else:
+            print("Error: followers or following must be used")
             
+        if len(year) == 4:
+            self.months(year)
+        else:
+            self.years()
+            
+        self.change_settings(settings=original_settings)
+        
     def auto_analysis(self):
         """
         Conducts all time analysis for all time and yearly for each year.
@@ -555,6 +598,7 @@ class AnalysisTime:
         #do all time analysis here
         self.hours("")
         self.months("")
+        self.year()
         self.top_days()
 
         for year in range(self.min_year,self.max_year+1):
@@ -567,8 +611,8 @@ class AnalysisTime:
         
 #Below are all the public methods of Analysis
 # "anon_data//anon_"
-analysis_time_object = AnalysisTime(path="Instagram_data\\")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
-                         #posts = False, direct = False, messages = False, message_likes = True, chaining_seen = False, followers = False, following=False)
+analysis_time_object = AnalysisTime(path="Instagram_data\\", media_likes = False, comment_likes = False, comments = False, stories = False, 
+                         posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=True)
 #analysis_time_object.change_settings()
 #analysis_time_object.read_settings()
 #analysis_time_object.timezone_test()
@@ -580,7 +624,9 @@ analysis_time_object = AnalysisTime(path="Instagram_data\\")#, media_likes = Fal
 #analysis_time_object.days("2020-01")
 #analysis_time_object.top_days()
 #analysis_time_object.days_range("2018-12-27","2019-01-06") #AMC 2018 ("2019-12-27","2020-01-05") #AMC 2019
-#analysis_time_object.months("2019")
+#analysis_time_object.months("")
+#analysis_time_object.years()
+#analysis_time_object.connections(True,True,"2017")
 #analysis_time_object.auto_analysis()
 
 #util.json_file_structure(analysis_time_object.media_json_data["photos"])
