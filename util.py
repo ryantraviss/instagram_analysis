@@ -103,7 +103,8 @@ def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_
     plt.plot(time,like_counts,style)
     if xtick_max != 0:
         plt.xticks(range(xtick_min,xtick_max))
-    #plt.xticks((time[0],time[5],time[10],time[15],time[20]))
+    else:
+        plt.xticks([time[x] for x in range(0,len(time),6)])
     
     plt.xlabel(xlabel)
  
