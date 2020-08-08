@@ -31,7 +31,7 @@ Post Mode (self.post_mode) Documentation
     based on the number of photos they contain so "single" is the default mode.
 """
 
-import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics
+import json, numpy as np, datetime
 import util
 
 class AnalysisTime:
@@ -118,6 +118,11 @@ class AnalysisTime:
         self.account_created_date = self.profile_json_data["date_joined"]
         self.username = self.profile_json_data["username"]
         self.min_year, self.max_year = self._min_max_year()
+        
+        self.ylabel = "Activity"
+        #This is an attribute so it can be altered easily by methods 
+        #which set certain data sources to be used such as connections()
+        #without needing to be passed as a parameter to every other method
         
     def _min_max_year(self):
         """
@@ -363,7 +368,7 @@ class AnalysisTime:
             time_data = self._data_time(slice(10,11),"T",slice(11,13))
             year_month_day = "all time"
             
-        util.graph(time_data,year_month_day,"Hour",xtick_max=24)
+        util.graph(time_data,year_month_day,"Hour",xtick_max=24,ylabel=self.ylabel)
         util.table(time_data,missing_data_items=(24-len(np.unique(time_data))),print_latex=self.print_latex)
         util.graph_boxplot(time_data,year_month_day,"Hour",xtick_max=24)
     
@@ -398,19 +403,19 @@ class AnalysisTime:
                     hours[day_of_week-1].append(day_of_week_hour[1])
             hours[day_of_week-1] = list(map(int,hours[day_of_week-1]))
             if graph_per_day:
-                util.graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
+                util.graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24,ylabel=self.ylabel)
                 util.graph_boxplot(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
                 print("Day of week",day_of_week)
                 util.table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))),print_latex=self.print_latex)
         
         workday_hours = hours[0]+hours[1]+hours[2]+hours[3]+hours[4]
-        util.graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
+        util.graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24,ylabel=self.ylabel)
         util.graph_boxplot(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
         print("Weekdays(Monday-Friday)")
         util.table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))),print_latex=self.print_latex)
         
         weekend_hours = hours[5] + hours[6]
-        util.graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
+        util.graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24,ylabel=self.ylabel)
         util.graph_boxplot(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
         print("Weekend")
         util.table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))),print_latex=self.print_latex)
@@ -437,7 +442,7 @@ class AnalysisTime:
             for day in time_data:
                 day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day))
                 day_of_week.append(day_datetime.isoweekday())
-        util.graph(day_of_week,year_month,"Day of Week")#,style = "xb")
+        util.graph(day_of_week,year_month,"Day of Week",ylabel=self.ylabel)#,style = "xb")
         util.table(day_of_week,print_latex=self.print_latex)
         
     def days(self,year_month):
@@ -451,7 +456,7 @@ class AnalysisTime:
 
         """
         time_data = self._data_time(slice(0,7),year_month,slice(8,10))
-        util.graph(time_data,year_month,"Day")
+        util.graph(time_data,year_month,"Day",ylabel=self.ylabel)
         util.graph_boxplot(time_data,year_month,"Day")
         util.table(time_data,print_latex=self.print_latex)
         
@@ -523,7 +528,7 @@ class AnalysisTime:
                 match_date = finish_date[0:8] + day
                 time_data += self._data_time(slice(0,10),match_date,slice(0,10),return_ints=False)
             
-        util.graph(time_data,start_date+" to "+finish_date,"Day")
+        util.graph(time_data,start_date+" to "+finish_date,"Day",ylabel=self.ylabel)
         #util.graph_boxplot(time_data,start_date+" to "+finish_date,"Day")
         print("Between",start_date,"and",finish_date,"inclusive:")
         util.table(time_data,print_latex=self.print_latex)
@@ -540,11 +545,11 @@ class AnalysisTime:
         """
         if len(year) == 4:
             time_data = self._data_time(slice(0,4),year,slice(5,7))
-            util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13)
+            util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13,ylabel=self.ylabel)
         else:
             time_data = self._data_time(slice(10,11),"T",slice(0,7),return_ints=False)
             year = "all time"
-            util.graph(time_data,year,"Month")
+            util.graph(time_data,year,"Month",ylabel=self.ylabel)
         #util.graph_boxplot(time_data,year,"Month")
         util.table(time_data,print_latex=self.print_latex)
         
@@ -553,35 +558,39 @@ class AnalysisTime:
         Conducts analysis on years.
         """
         time_data = self._data_time(slice(10,11),"T",slice(0,4))
-        util.graph(time_data,"all time","Year",xtick_min=self.min_year,xtick_max=self.max_year+1)
+        util.graph(time_data,"all time","Year",xtick_min=self.min_year,xtick_max=self.max_year+1,ylabel=self.ylabel)
         util.table(time_data,print_latex=self.print_latex)
         
-    def connections(self,followers,following,year):
+    def connections(self,year,followers=True,following=True):
         """
         Conducts analysis on connections.
 
         Parameters
         ----------
-        followers : boolean
-            Should followers be used.
-        following : boolean
-            Should following be used.
         year : string
             The year (or all time if empty) to analyise.
+        followers : boolean, optional
+            Should followers be used. The default is True.
+        following : boolean, optional
+            Should following be used. The default is True.
 
         """
         original_settings = self.read_settings()
         if followers and following:
             print("Connections Analysis")
             self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, True, True, False))
+            self.ylabel = "Connections"
         elif followers:
             print("Followers Analysis")
             self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, True, False, False))
+            self.ylabel = "Followers"
         elif following:
             print("Following Analysis")
             self.change_settings(settings=(False, False, False, False, False, "", False, False, False, False, False, True, False))
+            self.ylabel = "Following"
         else:
             print("Error: followers or following must be used")
+            return
             
         if len(year) == 4:
             self.months(year)
@@ -589,10 +598,27 @@ class AnalysisTime:
             self.years()
             
         self.change_settings(settings=original_settings)
+        self.ylabel = "Activity"
         
+    def yearly_analysis(self, year):
+        """
+        Conducts all analysis for a year.
+
+        Parameters
+        ----------
+        year : string
+            The year to be analyised.
+
+        """
+        self.hours(year)
+        self.day_of_week_hours(year)
+        self.day_of_week(year)
+        self.months(year)
+        self.connections(year)
+            
     def auto_analysis(self):
         """
-        Conducts all time analysis for all time and yearly for each year.
+        Conducts all analysis for all time and yearly for each year.
         """
         self.timezone_test()
         #do all time analysis here
@@ -600,13 +626,11 @@ class AnalysisTime:
         self.months("")
         self.year()
         self.top_days()
+        self.connections("")
 
         for year in range(self.min_year,self.max_year+1):
-            year = str(year)
-            self.hours(year)
-            self.day_of_week_hours(year)
-            self.day_of_week(year)
-            self.months(year)
+            self.yearly_analysis(str(year))
+
         print("#"*10,"Automated Analysis Finished","#"*10)
         
 #Below are all the public methods of Analysis
@@ -626,7 +650,8 @@ analysis_time_object = AnalysisTime(path="Instagram_data\\", media_likes = False
 #analysis_time_object.days_range("2018-12-27","2019-01-06") #AMC 2018 ("2019-12-27","2020-01-05") #AMC 2019
 #analysis_time_object.months("")
 #analysis_time_object.years()
-#analysis_time_object.connections(True,True,"2017")
+#analysis_time_object.connections("2017",followers=True,following=True)
+#analysis_time_object.yearly_analysis("2017")
 #analysis_time_object.auto_analysis()
 
 #util.json_file_structure(analysis_time_object.media_json_data["photos"])
