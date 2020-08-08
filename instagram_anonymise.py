@@ -1,11 +1,11 @@
-#instagram_anonymise.py
+#instagram_anonymise.py by Ryan Traviss
 
 import json
 
 OLD_FILEPATH = "Instagram_data\\"
 NEW_FILEPATH = "anon_data\\anon_"
-USERNAME = ""
-
+print("Enter your username below:")
+USERNAME = input(">>>")
     
 def _read_json(filename):
     """
