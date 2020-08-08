@@ -68,7 +68,7 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
         print("Range & ",max(data_frequency)-min(data_frequency),"\\\\")
         print(""" \hline\n\end{tabular}\n\end{table}""")
     
-def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_max = 0):
+def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_max = 0,ylabel="Activity"):
     """
     Plots the line graph of the data with nice formatting.
 
@@ -108,8 +108,8 @@ def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_
     
     plt.xlabel(xlabel)
  
-    plt.title("Activity per " +xlabel+ " in "+date)
-    plt.ylabel("Activity")
+    plt.title(ylabel+" per " +xlabel+ " in "+date)
+    plt.ylabel(ylabel)
     
     plt.show()
     #plt.savefig("D:\ExeterMathsSchool\My Data Individual EMC\graphs\media_likes_months_"+year)
