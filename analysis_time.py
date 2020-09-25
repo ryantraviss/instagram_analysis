@@ -108,13 +108,13 @@ class AnalysisTime:
         self.print_latex = print_latex
         
 
-        self.likes_json_data = self._read_json(path+likes_filename)
-        self.comments_json_data = self._read_json(path+comments_filename)
-        self.media_json_data = self._read_json(path+media_filename)
-        self.seen_content_json_data = self._read_json(path+seen_content_filename)
-        self.profile_json_data = self._read_json(path+profile_filename)
-        self.messages_json_data = self._read_json(path+messages_filename)
-        self.connections_json_data = self._read_json(path+connections_filename)
+        self.likes_json_data = util.read_json(path+likes_filename)
+        self.comments_json_data = util.read_json(path+comments_filename)
+        self.media_json_data = util.read_json(path+media_filename)
+        self.seen_content_json_data = util.read_json(path+seen_content_filename)
+        self.profile_json_data = util.read_json(path+profile_filename)
+        self.messages_json_data = util.read_json(path+messages_filename)
+        self.connections_json_data = util.read_json(path+connections_filename)
         
         self.account_created_date = self.profile_json_data["date_joined"]
         self.username = self.profile_json_data["username"]
@@ -193,24 +193,6 @@ class AnalysisTime:
         self.direct, self.chaining_seen, self.messages,
         self.message_likes,
         self.followers, self.following, self.print_latex)
-        
-    def _read_json(self, filename):
-        """
-        Opens the file, reads the data, closes it and turns it into a dictionary. 
-
-        Parameters
-        ----------
-        filename : string
-            The filename of a JSON file to be opened and read.
-
-        Returns
-        -------
-        Dictionary
-            The JSON data in the file as a Python dictionary.
-
-        """
-        with open(filename, "r", encoding="utf8") as f:
-            return json.loads(f.read())
     
     def _extract_data(self, json_data, slice_match, match, slice_keep):
         return_data = []
