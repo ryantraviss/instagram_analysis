@@ -73,7 +73,7 @@ Message Likes Mode User (self.message_likes_mode_user)
     "my_messages_likes_both" is the default mode.    
 """
 
-import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics
+import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics, util
 
 class AnalysisUser:
     def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
@@ -157,13 +157,13 @@ class AnalysisUser:
         self.print_latex = print_latex
         
 
-        self.likes_json_data = self._read_json(path+likes_filename)
-        self.comments_json_data = self._read_json(path+comments_filename)
-        self.media_json_data = self._read_json(path+media_filename)
-        self.seen_content_json_data = self._read_json(path+seen_content_filename)
-        self.profile_json_data = self._read_json(path+profile_filename)
-        self.messages_json_data = self._read_json(path+messages_filename)
-        self.connections_json_data = self._read_json(path+connections_filename)
+        self.likes_json_data = util.read_json(path+likes_filename)
+        self.comments_json_data = util.read_json(path+comments_filename)
+        self.media_json_data = util.read_json(path+media_filename)
+        self.seen_content_json_data = util.read_json(path+seen_content_filename)
+        self.profile_json_data = util.read_json(path+profile_filename)
+        self.messages_json_data = util.read_json(path+messages_filename)
+        self.connections_json_data = util.read_json(path+connections_filename)
         
         self.account_created_date = self.profile_json_data["date_joined"]
         self.username = self.profile_json_data["username"]
@@ -450,8 +450,7 @@ class AnalysisUser:
             print("Error: This doesn't work with anonymised data!")
             
 #Below are all the public methods of AnalysisUser
-# "anon_data//anon_"
-analysis_object = AnalysisUser(path="Instagram_data\\")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
+analysis_object = AnalysisUser(path="")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
                          #posts = False, direct = False, messages = False, message_likes = True, chaining_seen = False, followers = False, following=False)
 #analysis_object.change_settings()
 #analysis_object.read_settings()
