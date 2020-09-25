@@ -180,3 +180,21 @@ def json_file_structure(json_data, tabs=0):
         
     else:
         print("\t"*tabs+str(json_data).replace("\n","\\\\"))
+        
+    def _read_json(self, filename):
+        """
+        Opens the file, reads the data, closes it and turns it into a dictionary. 
+
+        Parameters
+        ----------
+        filename : string
+            The filename of a JSON file to be opened and read.
+
+        Returns
+        -------
+        Dictionary
+            The JSON data in the file as a Python dictionary.
+
+        """
+        with open(filename, "r", encoding="utf8") as f:
+            return json.loads(f.read())  
