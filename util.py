@@ -1,5 +1,5 @@
 #util.py by Ryan Traviss
-import matplotlib.pyplot as plt, numpy as np, datetime, statistics
+import matplotlib.pyplot as plt, numpy as np, datetime, statistics, json
 
 def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100, print_latex=False):
     """
