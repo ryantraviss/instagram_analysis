@@ -13,7 +13,8 @@ Please let me know if you have any suggestions/feedback!
 The Public API is currently avalible in the docstring following each subroutine in the code.
 I will use Semantic Versioning in the future but everything is currently in version 0.0.0 so it could all change at any moment!
 
-I will probably give this some open-source licence which requires attributation but I haven't got round to deciding on which one.
+This project is licensed under the MIT license which allows you to do basically anything with the code that you want as long as you include the LICENSE file.
+Note: the EMS logo within the report is not covered by this license.
 
 This project is part of my Exeter Mathematics Certificate(https://www.exetermathematicsschool.ac.uk/exeter-mathematics-certificate/).
 
