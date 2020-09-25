@@ -33,6 +33,7 @@ Post Mode (self.post_mode) Documentation
 
 import json, numpy as np, datetime
 import util
+import copy
 
 class AnalysisTime:
     def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
@@ -306,6 +307,35 @@ class AnalysisTime:
             return list(map(int,time_data)) #turns list of strings into list of integers
         else:
             return time_data
+        
+    def data_sources(self):#this is done in an awful way!
+        def get_all_time_data(self,true_index,data_source,settings):
+            settings[true_index] = True
+            self.change_settings(settings = settings)
+            return [data_source]*len(self._data_time(slice(10,11),"T",slice(0,4)))
+        
+        original_settings = self.read_settings()
+        data_sources_array = []
+        false_settings = [False, False, False, False, 
+                          False, "single", False, False, False,
+                          False, False, False, False]
+        
+        data_sources_array.extend(get_all_time_data(self,0,"media_likes",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,1,"comment_likes",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,2,"comments",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,3,"stories",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,4,"posts - single",false_settings.copy()))
+        false_settings[5] = "multiple"
+        data_sources_array.extend(get_all_time_data(self,4,"posts - multiple",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,6,"direct",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,7,"chaining_seen",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,8,"messages",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,9,"message_likes",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,10,"followers",false_settings.copy()))
+        data_sources_array.extend(get_all_time_data(self,11,"following",false_settings.copy()))
+        
+        self.change_settings(original_settings)
+        util.table(data_sources_array,sort_by_likes=True)
         
     def timezone_test(self):
         """
@@ -635,10 +665,11 @@ class AnalysisTime:
         
 #Below are all the public methods of Analysis
 # "anon_data//anon_"
-analysis_time_object = AnalysisTime(path="Instagram_data\\", media_likes = False, comment_likes = False, comments = False, stories = False, 
+analysis_time_object = AnalysisTime(path="", media_likes = False, comment_likes = False, comments = False, stories = False, 
                          posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=True)
 #analysis_time_object.change_settings()
 #analysis_time_object.read_settings()
+analysis_time_object.data_sources()
 #analysis_time_object.timezone_test()
 #analysis_time_object.date_range()
 #analysis_time_object.hours_minutes()
