@@ -545,6 +545,23 @@ class AnalysisTime:
         print("Between",start_date,"and",finish_date,"inclusive:")
         util.table(time_data,print_latex=self.print_latex)
         
+    def events(self,event_list):
+        """
+        Conducts analysis on a list of events using days_range.
+
+        Parameters
+        ----------
+        event_list : List of tuples of strings
+            Each tuple in the list is made up of the start date and finish date of the event.
+
+        Returns
+        -------
+        None.
+
+        """
+        for i in range(len(event_list)):
+            self.days_range(event_list[i][0],event_list[i][1])
+        
     def months(self,year):
         """
         Conducts analysis on months.
@@ -647,11 +664,17 @@ class AnalysisTime:
         
 #Below are all the public methods of Analysis
 # "anon_data//anon_"
-analysis_time_object = AnalysisTime(path="", media_likes = False, comment_likes = False, comments = False, stories = False, 
-                         posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=True)
+analysis_time_object = AnalysisTime(path="")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
+                         #posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=True)
+event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-11","2018-05-13"),("2018-06-08","2018-06-10"),("2018-07-12","2018-07-13"),
+              ("2018-07-20","2018-07-22"),("2018-07-29","2018-08-05"),("2018-08-13","2018-08-16"),("2018-08-20","2018-08-22"),("2018-09-15","2018-09-16"),
+              ("2018-09-21","2018-09-22"),("2018-10-05","2018-10-07"),("2018-11-02","2018-11-03"),("2018-12-28","2019-01-05"),("2019-02-22","2019-02-24"),
+              ("2019-03-01","2019-03-03"),("2019-03-30","2019-03-31"),("2019-06-19","2019-06-20"),("2019-06-21","2019-06-23"),("2019-07-12","2019-07-14"),
+              ("2019-08-03","2019-08-05"),("2019-08-09","2019-08-17"),("2019-09-21","2019-09-23"),("2019-10-04","2019-10-06"),("2019-10-21","2019-10-24"),
+              ("2019-12-28","2020-01-04")]
 #analysis_time_object.change_settings()
 #analysis_time_object.read_settings()
-analysis_time_object.data_sources()
+#analysis_time_object.data_sources()
 #analysis_time_object.timezone_test()
 #analysis_time_object.date_range()
 #analysis_time_object.hours_minutes()
@@ -661,6 +684,7 @@ analysis_time_object.data_sources()
 #analysis_time_object.days("2020-01")
 #analysis_time_object.top_days()
 #analysis_time_object.days_range("2018-12-27","2019-01-06") #AMC 2018 ("2019-12-27","2020-01-05") #AMC 2019
+#analysis_time_object.events(event_list)
 #analysis_time_object.months("")
 #analysis_time_object.years()
 #analysis_time_object.connections("2017",followers=True,following=True)
