@@ -449,6 +449,31 @@ class AnalysisUser:
         else:
             print("Error: This doesn't work with anonymised data!")
             
+    def video_calls(self):
+        video_call_data = []
+        start_time_string = ""
+        stop_time_string = ""
+        for x in range(len(self.messages_json_data)):#x is chat
+            for y in range(len(self.messages_json_data[x]["conversation"])):#y is message in that chat
+                message = self.messages_json_data[x]["conversation"][y]
+                if "video_call_action" in message.keys():
+                    if "started a video call" in message["video_call_action"]:
+                        start_time_string = self.messages_json_data[x]["conversation"][y]["created_at"][:19]
+                        start_time = datetime.datetime.strptime(start_time_string,"%Y-%m-%dT%H:%M:%S")
+                        #print(message)
+                    elif "ended a video call" in message["video_call_action"]:
+                        stop_time_string = self.messages_json_data[x]["conversation"][y]["created_at"][:19]
+                        stop_time = datetime.datetime.strptime(stop_time_string,"%Y-%m-%dT%H:%M:%S")
+                        #print(message)
+                    else:
+                        pass#print(message)
+                    if start_time_string != "" and stop_time_string != "":
+                        video_call_data.append((stop_time - start_time))
+                        start_time_string = ""
+                        stop_time_string = ""
+                        
+        print(video_call_data)
+        
 #Below are all the public methods of AnalysisUser
 analysis_object = AnalysisUser(path="")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
                          #posts = False, direct = False, messages = False, message_likes = True, chaining_seen = False, followers = False, following=False)
@@ -456,7 +481,8 @@ analysis_object = AnalysisUser(path="")#, media_likes = False, comment_likes = F
 #analysis_object.read_settings()
 #analysis_object.profile_summary()
 #analysis_object.top_message()
-analysis_object.best_friends()
+#analysis_object.best_friends()
 #analysis_object.worst_friends()
+analysis_object.video_calls()
 
 #util.json_file_structure(analysis_object.media_json_data["photos"])
