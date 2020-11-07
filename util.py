@@ -219,9 +219,5 @@ def date_to_time_period(date):
     """
     if len(date) == 0:
         return "all time"
-    elif len(date)  == 4:
-        return "year"
-    elif len(date) == 7:
-        return "month"
     else:
-        return "day"
+        return date
