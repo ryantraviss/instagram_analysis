@@ -1,7 +1,7 @@
 #util.py by Ryan Traviss
 import matplotlib.pyplot as plt, numpy as np, datetime, statistics, json
 
-def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100, print_latex=False):
+def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100, print_latex=False,unique=False):
     """
     Produces a full table of the selected data including summary statistics.
 
@@ -24,7 +24,10 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
     if data == []:
         print("Error: No data to make table")
         return
-    data_item, data_frequency = np.unique(data, return_counts=True)
+    if unique:
+        data_item, data_frequency = data
+    else:
+        data_item, data_frequency = np.unique(data, return_counts=True)
     if sort_by_likes:
         data_frequency, data_item = zip( *sorted( zip(data_frequency, data_item), reverse=True ) )
         
