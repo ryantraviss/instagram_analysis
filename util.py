@@ -51,6 +51,8 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
     print("Mean", np.mean(data_frequency))
     print("Median", statistics.median(data_frequency))
     print("SD",statistics.pstdev(data_frequency)) #population standard deviation
+    print("Min", min(data_frequency))
+    print("Max", max(data_frequency))
     print("Range",max(data_frequency)-min(data_frequency))
     print("Note:", missing_data_items,"missing 0's were added for the purpose of calulations")
     
@@ -68,6 +70,8 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
         print("\hline n &",len(data_item),"\\\\")
         print("Median &", statistics.median(data_frequency),"\\\\")
         print("SD & ",statistics.pstdev(data_frequency),"\\\\")
+        print("Min", min(data_frequency),"\\\\")
+        print("Max", max(data_frequency),"\\\\")
         print("Range & ",max(data_frequency)-min(data_frequency),"\\\\")
         print(""" \hline\n\end{tabular}\n\end{table}""")
     
