@@ -208,9 +208,9 @@ class AnalysisTime:
         Parameters
         ----------
         slice_match : Slice
-            The slice of the datetime to compare.
+            The slice of the datetime to compare (if match == "" then set to slice(10,11)).
         match : String
-            What should the datetime fragment equal.
+            What should the datetime fragment equal (if "" then set to "T").
         slice_keep : Slice
             What slice of the datetime should be returned.
         return_ints : Boolean, optional
@@ -222,7 +222,11 @@ class AnalysisTime:
             A list of selected fragments of the datetime.
 
         """
+        if match == "":
+            slice_match = slice(10,11)
+            match = "T"
         time_data = []
+        
         if self.media_likes:
             time_data.extend(self._extract_data(self.likes_json_data["media_likes"],slice_match, match, slice_keep))
 
@@ -246,7 +250,7 @@ class AnalysisTime:
                 elif self.post_mode == "single":
                     current_datetime = self.media_json_data["photos"][x]["taken_at"][0:13]
                     if current_datetime[slice_match] == match and current_datetime != previous_datetime:
-                        time_data.append(current_datetime[slice_keep])
+                        time_data.append(self.media_json_data["photos"][x]["taken_at"][slice_keep])
                     previous_datetime = current_datetime
                         
         
@@ -351,12 +355,7 @@ class AnalysisTime:
             The data to match - can be YYYY-MM-DD, YYYY-MM or empty for all time.
 
         """
-        if len(year_month_day) == 10:
-            time_data = self._data_time(slice(0,10),year_month_day,slice(11,16),return_ints=False)
-        elif len(year_month_day) == 7:#year-month
-            time_data = self._data_time(slice(0,7),year_month_day,slice(11,16),return_ints=False)
-        else:
-            time_data = self._data_time(slice(10,11),"T",slice(11,16),return_ints=False)
+        time_data = self._data_time(slice(0,len(year_month_day)),year_month_day,slice(11,16),return_ints=False)
         #util.graph(time_data,year_month_day,"Hour:Minute")
         util.table(time_data,print_latex=self.print_latex)
         
@@ -370,19 +369,10 @@ class AnalysisTime:
             The data to match - can be YYYY-MM-DD, YYYY-MM, YYYY or empty for all time..
 
         """
-        if len(year_month_day) == 10:#year-month-day
-            time_data = self._data_time(slice(0,10),year_month_day,slice(11,13))
-        elif len(year_month_day) == 7:#year-month
-            time_data = self._data_time(slice(0,7),year_month_day,slice(11,13))
-        elif len(year_month_day) == 4:#year
-            time_data = self._data_time(slice(0,4),year_month_day,slice(11,13))
-        else:#all of time
-            time_data = self._data_time(slice(10,11),"T",slice(11,13))
-            year_month_day = "all time"
-            
-        util.graph(time_data,year_month_day,"Hour",xtick_max=24,ylabel=self.ylabel)
+        time_data = self._data_time(slice(0,len(year_month_day)),year_month_day,slice(11,13))
+        util.graph(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24,ylabel=self.ylabel)
         util.table(time_data,missing_data_items=(24-len(np.unique(time_data))),print_latex=self.print_latex)
-        util.graph_boxplot(time_data,year_month_day,"Hour",xtick_max=24)
+        util.graph_boxplot(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24)
     
     def day_of_week_hours(self,year_month,graph_per_day=False):
         """
@@ -572,12 +562,10 @@ class AnalysisTime:
             The data to match - can be YYYY or empty for all time.
 
         """
+        time_data = self._data_time(slice(0,len(year)),year,slice(5,7))
         if len(year) == 4:
-            time_data = self._data_time(slice(0,4),year,slice(5,7))
             util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13,ylabel=self.ylabel)
         else:
-            time_data = self._data_time(slice(10,11),"T",slice(0,7),return_ints=False)
-            year = "all time"
             util.graph(time_data,year,"Month",ylabel=self.ylabel)
         #util.graph_boxplot(time_data,year,"Month")
         util.table(time_data,print_latex=self.print_latex)
@@ -629,6 +617,38 @@ class AnalysisTime:
         self.change_settings(settings=original_settings)
         self.ylabel = "Activity"
         
+    def breaks(self,date,min_break=datetime.timedelta(days=1)):
+        """
+        Conducts analysis on breaks I have taken from Instagram.
+
+        Parameters
+        ----------
+        date : string
+            When should the analysis cover - empty string for all time.
+        min_break : datetime.timedelta, optional
+            What is the minimum break that should be included. The default is datetime.timedelta(days=1).
+
+        """
+        time_data = self._data_time(slice(0,len(date)),date, slice(0,19),return_ints=False)
+        time_data.sort(reverse=True)
+        time_data = [datetime.datetime.strptime(datestamp, "%Y-%m-%dT%H:%M:%S") for datestamp in time_data]
+        
+        max_break = datetime.timedelta(seconds=0)
+        break_start = ""
+        breaks = ([],[])
+        
+        for i in range(len(time_data)-1):
+            break_length = time_data[i] - time_data[i+1]
+            break_length_hours = break_length.days * 24 + break_length.seconds//3600
+            if break_length > min_break:
+                breaks[0].append(time_data[i].strftime("%Y-%m-%d"))
+                breaks[1].append(break_length_hours)
+                
+        breaks[0].reverse()
+        breaks[1].reverse()
+        util.graph(breaks,util.date_to_time_period(date), "day", ylabel="hours break",unique=True)
+        util.table(breaks,sort_by_likes=True,unique=True,print_latex=self.print_latex)
+        
     def yearly_analysis(self, year):
         """
         Conducts all analysis for a year.
@@ -644,6 +664,7 @@ class AnalysisTime:
         self.day_of_week(year)
         self.months(year)
         self.connections(year)
+        self.breaks(year)
             
     def auto_analysis(self):
         """
@@ -656,6 +677,7 @@ class AnalysisTime:
         self.year()
         self.top_days()
         self.connections("")
+        self.breaks("")
 
         for year in range(self.min_year,self.max_year+1):
             self.yearly_analysis(str(year))
@@ -679,15 +701,16 @@ event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-
 #analysis_time_object.date_range()
 #analysis_time_object.hours_minutes()
 #analysis_time_object.hours("")
-#analysis_time_object.day_of_week_hours()
-#analysis_time_object.day_of_week()
+#analysis_time_object.day_of_week_hours("2019")
+#analysis_time_object.day_of_week("2019")
 #analysis_time_object.days("2020-01")
 #analysis_time_object.top_days()
-#analysis_time_object.days_range("2018-12-27","2019-01-06") #AMC 2018 ("2019-12-27","2020-01-05") #AMC 2019
+#analysis_time_object.days_range("2019-12-27","2020-01-05") #AMC 2019
 #analysis_time_object.events(event_list)
 #analysis_time_object.months("")
 #analysis_time_object.years()
-#analysis_time_object.connections("2017",followers=True,following=True)
+#analysis_time_object.connections("2019",followers=True,following=True)
+analysis_time_object.breaks("2019",min_break=datetime.timedelta(hours=24))
 #analysis_time_object.yearly_analysis("2017")
 #analysis_time_object.auto_analysis()
 
