@@ -202,7 +202,7 @@ def read_json(filename):
     with open(filename, "r", encoding="utf8") as f:
         return json.loads(f.read())
     
-def date_to_xlabel(date):
+def date_to_time_period(date):
     """
     Converts part of a date to what xlabel that would be.
 
@@ -214,7 +214,7 @@ def date_to_xlabel(date):
     Returns
     -------
     str
-        The xlabel that should be used.
+        The time period the partial date represents.
 
     """
     if len(date) == 0:
