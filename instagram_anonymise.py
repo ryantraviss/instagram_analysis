@@ -1,9 +1,12 @@
 #instagram_anonymise.py by Ryan Traviss
+#DISCLAIMER: This is not tested for business accounts and is unlikely to work.
+#This is not perfect and a better way would be to make
+#a new dictionary with the right structure and only copy over data you want.
 
 import json
 
-OLD_FILEPATH = "Instagram_data\\"
-NEW_FILEPATH = "anon_data\\anon_"
+OLD_FILEPATH = ""
+NEW_FILEPATH = "my_anon_data\\"
 print("Enter your username below:")
 USERNAME = input(">>>")
     
