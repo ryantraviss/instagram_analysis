@@ -200,4 +200,28 @@ def read_json(filename):
 
     """
     with open(filename, "r", encoding="utf8") as f:
-        return json.loads(f.read())  
+        return json.loads(f.read())
+    
+def date_to_xlabel(date):
+    """
+    Converts part of a date to what xlabel that would be.
+
+    Parameters
+    ----------
+    date : string
+        eg 2020-10.
+
+    Returns
+    -------
+    str
+        The xlabel that should be used.
+
+    """
+    if len(date) == 0:
+        return "all time"
+    elif len(date)  == 4:
+        return "year"
+    elif len(date) == 7:
+        return "month"
+    else:
+        return "day"
