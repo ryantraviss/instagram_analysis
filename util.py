@@ -1,7 +1,7 @@
 #util.py by Ryan Traviss
 import matplotlib.pyplot as plt, numpy as np, datetime, statistics, json
 
-def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=100, print_latex=False,unique=False):
+def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=150, print_latex=False, print_lists = False, unique=False):
     """
     Produces a full table of the selected data including summary statistics.
 
@@ -30,6 +30,10 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
         data_item, data_frequency = np.unique(data, return_counts=True)
     if sort_by_likes:
         data_frequency, data_item = zip( *sorted( zip(data_frequency, data_item), reverse=True ) )
+        
+    if print_lists:
+        print(list(data_item))
+        print(list(data_frequency))
         
     print("data_item data_frequency")
     if sort == "asc":
@@ -74,6 +78,53 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
         print("Max", max(data_frequency),"\\\\")
         print("Range & ",max(data_frequency)-min(data_frequency),"\\\\")
         print(""" \hline\n\end{tabular}\n\end{table}""")
+        
+def table_multicolumn(data_item, data_frequencies):#Work in Progress
+    """
+    Produces a latex table with multiple columns. 
+
+    Parameters
+    ----------
+    data_item : list
+        DESCRIPTION.
+    data_frequencies : list
+        DESCRIPTION.
+
+    """
+    def stats(function):
+        for j in range(len(data_frequencies)):
+            print(" &",function(data_frequencies[j]),end="")
+        print("\\\\")
+    max_rows = 50
+    print_latex = True
+    sort = "asc"
+    if print_latex:
+        print("\n","#"*20,"Latex","#"*20)
+        print("""\\begin{table}[h]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c|c|c|c|c| } \n \hline TBC & TBC \\\\ \hline""")
+        if sort == "asc":
+            for i in range(min(len(data_item),max_rows)):
+                print(data_item[i],end="")
+                for j in range(len(data_frequencies)):
+                    print("&",data_frequencies[j][i],end="")
+                print("\\\\")
+        #else:   #descending order
+        #    for i in range(len(data_item)-1,(len(data_item)-max_rows),-1):
+        #        print(data_item[i],"&",data_frequency[i],"\\\\",end="")
+        print("\hline Total", end="")
+        stats(sum)
+        print("\hline ",end="")
+        
+        print("Mean ",end="")#
+        stats(np.mean)
+        #print("\hline n &",len(data_item),"\\\\")
+        print("Median ",end="")
+        stats(statistics.median)
+        print("SD ",end="")
+        stats(statistics.pstdev)
+        #print("Min", min(data_frequency),"\\\\")
+        #print("Max", max(data_frequency),"\\\\")
+        #print("Range ",max(data_frequency)-min(data_frequency),"\\\\")
+        print(""" \hline\n\end{tabular}\n\end{table}""")
     
 def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_max = 0,ylabel="Activity"):
     """
@@ -111,7 +162,8 @@ def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_
     if xtick_max != 0:
         plt.xticks(range(xtick_min,xtick_max))
     else:
-        plt.xticks([time[x] for x in range(0,len(time),6)])
+        plt.xticks([time[x] for x in range(0,len(time))])
+        #plt.xticks([time[0] , time[len(time)-1]])
     
     plt.xlabel(xlabel)
  
