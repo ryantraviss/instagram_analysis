@@ -124,6 +124,7 @@ class AnalysisTime:
         #This is an attribute so it can be altered easily by methods 
         #which set certain data sources to be used such as connections()
         #without needing to be passed as a parameter to every other method
+        self.print_lists = False
         
     def _min_max_year(self):
         """
@@ -357,7 +358,7 @@ class AnalysisTime:
         """
         time_data = self._data_time(slice(0,len(year_month_day)),year_month_day,slice(11,16),return_ints=False)
         #util.graph(time_data,year_month_day,"Hour:Minute")
-        util.table(time_data,print_latex=self.print_latex)
+        util.table(time_data,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def hours(self,year_month_day):
         """
@@ -371,7 +372,7 @@ class AnalysisTime:
         """
         time_data = self._data_time(slice(0,len(year_month_day)),year_month_day,slice(11,13))
         util.graph(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24,ylabel=self.ylabel)
-        util.table(time_data,missing_data_items=(24-len(np.unique(time_data))),print_latex=self.print_latex)
+        util.table(time_data,missing_data_items=(24-len(np.unique(time_data))), print_latex=self.print_latex, print_lists=self.print_lists)
         util.graph_boxplot(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24)
     
     def day_of_week_hours(self,year_month,graph_per_day=False):
@@ -387,17 +388,16 @@ class AnalysisTime:
 
         """
         days_of_week = []
-        if len(year_month) == 4:
-            time_data = self._data_time(slice(0,4),year_month,slice(5,13),return_ints=False)#,return_counts=True)
-            for month_day in time_data:
-                day_datetime = datetime.date(int(year_month[:4]),int(month_day[:2]),int(month_day[3:5]))
-                days_of_week.append([day_datetime.isoweekday(),month_day[-2:]])
-        else:
-            time_data = self._data_time(slice(0,7),year_month,slice(8,13),return_ints=False)        
-            for day in time_data:
-                day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day[:2]))
-                days_of_week.append([day_datetime.isoweekday(),day[-2:]])
-                
+        
+        
+        time_data = self._data_time(slice(0,len(year_month)),year_month,slice(0,13),return_ints=False)
+        for date_time in time_data:
+            day_datetime = datetime.date(int(date_time[:4]),int(date_time[5:7]),int(date_time[8:10]))
+            days_of_week.append([day_datetime.isoweekday(),date_time[-2:]])
+        
+        if year_month == "":
+            year_month = "all time"
+        
         hours = [[],[],[],[],[],[],[]]
         for day_of_week in range(1,8):
             for day_of_week_hour in days_of_week:
@@ -408,19 +408,19 @@ class AnalysisTime:
                 util.graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24,ylabel=self.ylabel)
                 util.graph_boxplot(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
                 print("Day of week",day_of_week)
-                util.table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))),print_latex=self.print_latex)
+                util.table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))),print_latex=self.print_latex, print_lists=self.print_lists)
         
         workday_hours = hours[0]+hours[1]+hours[2]+hours[3]+hours[4]
         util.graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24,ylabel=self.ylabel)
         util.graph_boxplot(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
         print("Weekdays(Monday-Friday)")
-        util.table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))),print_latex=self.print_latex)
+        util.table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))),print_latex=self.print_latex, print_lists=self.print_lists)
         
         weekend_hours = hours[5] + hours[6]
         util.graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24,ylabel=self.ylabel)
         util.graph_boxplot(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
         print("Weekend")
-        util.table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))),print_latex=self.print_latex)
+        util.table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))),print_latex=self.print_latex, print_lists=self.print_lists)
         
     
     def day_of_week(self,year_month):
@@ -434,18 +434,12 @@ class AnalysisTime:
 
         """
         day_of_week = []
-        if len(year_month) == 4:
-            time_data = self._data_time(slice(0,4),year_month,slice(5,10),return_ints=False)
-            for month_day in time_data:
-                day_datetime = datetime.date(int(year_month[:4]),int(month_day[:2]),int(month_day[3:]))
-                day_of_week.append(day_datetime.isoweekday())
-        else:
-            time_data = self._data_time(slice(0,7),year_month,slice(8,10),return_ints=False)        
-            for day in time_data:
-                day_datetime = datetime.date(int(year_month[:4]),int(year_month[5:7]),int(day))
-                day_of_week.append(day_datetime.isoweekday())
+        time_data = self._data_time(slice(0,len(year_month)),year_month,slice(0,10),return_ints=False)
+        for date in time_data:
+            day_datetime = datetime.date(int(date[:4]),int(date[5:7]),int(date[8:10]))
+            day_of_week.append(day_datetime.isoweekday())
         util.graph(day_of_week,year_month,"Day of Week",ylabel=self.ylabel)#,style = "xb")
-        util.table(day_of_week,print_latex=self.print_latex)
+        util.table(day_of_week,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def days(self,year_month):
         """
@@ -460,7 +454,7 @@ class AnalysisTime:
         time_data = self._data_time(slice(0,7),year_month,slice(8,10))
         util.graph(time_data,year_month,"Day",ylabel=self.ylabel)
         util.graph_boxplot(time_data,year_month,"Day")
-        util.table(time_data,print_latex=self.print_latex)
+        util.table(time_data,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def top_days(self,number_of_days=25):
         """
@@ -473,13 +467,11 @@ class AnalysisTime:
 
         """
         time_data = self._data_time(slice(10,11),"T",slice(0,10),return_ints=False)
-        util.table(time_data,max_rows=number_of_days,sort_by_likes=True,print_latex=self.print_latex)
+        util.table(time_data,max_rows=number_of_days,sort_by_likes=True,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def days_range(self,start_date,finish_date): 
         """ 
         Conducts analysis on all days between start_date and finish_date inclusive.
-        start_date and finish_date MUST be in same year
-        (or start_date in December and finish_date in January of following year).
 
         Parameters
         ----------
@@ -490,50 +482,37 @@ class AnalysisTime:
 
         """
         time_data = []
-        if start_date[0:5] == finish_date[0:5]:
-            for month in range(int(start_date[5:7]),int(finish_date[5:7])+1):
-                month = str(month)
-                month = "0"*(2-len(month)) + month
-                if start_date[5:7] == finish_date[5:7]: #if same month
-                    for day in range(int(start_date[8:10]),int(finish_date[8:10])+1):
-                        day = str(day)
-                        day = "0"*(2-len(day)) + day
-                        match_date = start_date[0:5] + month + "-" +day
-                        time_data += self._data_time(slice(0,10),match_date,slice(5,10),return_ints=False)
-                elif month == start_date[5:7]: #if on starting month
-                    for day in range(int(start_date[8:10]),32):
-                        day = str(day)
-                        day = "0"*(2-len(day)) + day
-                        match_date = start_date[0:5] + month + "-" +day
-                        time_data += self._data_time(slice(0,10),match_date,slice(5,10),return_ints=False)
-                elif month == finish_date[5:7]: #if on finishing month
-                    for day in range(1,int(finish_date[8:10])+1):
-                        day = str(day)
-                        day = "0"*(2-len(day)) + day
-                        match_date = start_date[0:5] + month + "-" +day
-                        time_data += self._data_time(slice(0,10),match_date,slice(5,10),return_ints=False)
-                else:
-                    for day in range(0,32): #include all days in month
-                        day = str(day)
-                        day = "0"*(2-len(day)) + day
-                        match_date = start_date[0:5] + month + "-" +day
-                        time_data += self._data_time(slice(0,10),match_date,slice(5,10),return_ints=False)
-        else:
-            for day in range(int(start_date[8:10]),32): #include all days in starting month
-                day = str(day)
-                day = "0"*(2-len(day)) + day
-                match_date = start_date[0:8] + day
-                time_data += self._data_time(slice(0,10),match_date,slice(0,10),return_ints=False)
-            for day in range(1,int(finish_date[8:10])+1): #include all days in finishing month
-                day = str(day)
-                day = "0"*(2-len(day)) + day
-                match_date = finish_date[0:8] + day
-                time_data += self._data_time(slice(0,10),match_date,slice(0,10),return_ints=False)
+        for year in range(int(start_date[:4]),int(finish_date[:4])+1):
+            if year == int(start_date[:4]):
+                start_month = int(start_date[5:7])
+            else:
+                start_month = 1
+            if year == int(finish_date[:4]):
+                finish_month = int(finish_date[5:7])
+            else:
+                finish_month = 12
+                
+            for month in range(start_month,finish_month+1):
+                year_month = str(year) +"-" + "0"*(2-len(str(month))) + str(month)
             
+                if year_month == start_date[0:7]:
+                    start_day = int(start_date[8:10])
+                else:
+                    start_day = 1
+                    
+                if year_month == finish_date[0:7]:
+                    finish_day = int(finish_date[8:10])
+                else:
+                    finish_day = 31
+        
+                for day in range(start_day, finish_day+1):
+                    date = year_month + "-" + "0"*(2-len(str(day))) + str(day)
+                    time_data += self._data_time(slice(0,10),date,slice(0,10),return_ints=False)
+        
         util.graph(time_data,start_date+" to "+finish_date,"Day",ylabel=self.ylabel)
         #util.graph_boxplot(time_data,start_date+" to "+finish_date,"Day")
         print("Between",start_date,"and",finish_date,"inclusive:")
-        util.table(time_data,print_latex=self.print_latex)
+        util.table(time_data,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def events(self,event_list):
         """
@@ -566,9 +545,10 @@ class AnalysisTime:
         if len(year) == 4:
             util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13,ylabel=self.ylabel)
         else:
-            util.graph(time_data,year,"Month",ylabel=self.ylabel)
+            year = "all time"
+            util.graph(time_data,year,"Month",xtick_min=1,xtick_max=13,ylabel=self.ylabel)
         #util.graph_boxplot(time_data,year,"Month")
-        util.table(time_data,print_latex=self.print_latex)
+        util.table(time_data,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def years(self):
         """
@@ -576,7 +556,7 @@ class AnalysisTime:
         """
         time_data = self._data_time(slice(10,11),"T",slice(0,4))
         util.graph(time_data,"all time","Year",xtick_min=self.min_year,xtick_max=self.max_year+1,ylabel=self.ylabel)
-        util.table(time_data,print_latex=self.print_latex)
+        util.table(time_data,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def connections(self,year,followers=True,following=True):
         """
@@ -647,7 +627,7 @@ class AnalysisTime:
         breaks[0].reverse()
         breaks[1].reverse()
         util.graph(breaks,util.date_to_time_period(date), "day", ylabel="hours break",unique=True)
-        util.table(breaks,sort_by_likes=True,unique=True,print_latex=self.print_latex)
+        util.table(breaks,sort_by_likes=True,unique=True,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def yearly_analysis(self, year):
         """
@@ -673,6 +653,8 @@ class AnalysisTime:
         self.timezone_test()
         #do all time analysis here
         self.hours("")
+        self.day_of_week_hours("")
+        self.day_of_week("")
         self.months("")
         self.year()
         self.top_days()
@@ -685,9 +667,8 @@ class AnalysisTime:
         print("#"*10,"Automated Analysis Finished","#"*10)
         
 #Below are all the public methods of Analysis
-# "anon_data//anon_"
-analysis_time_object = AnalysisTime(path="")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
-                         #posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=True)
+analysis_time_object = AnalysisTime()#path="", media_likes = False, comment_likes = False, comments = False, stories = False, 
+                         #posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = True, following=True, print_latex=True)
 event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-11","2018-05-13"),("2018-06-08","2018-06-10"),("2018-07-12","2018-07-13"),
               ("2018-07-20","2018-07-22"),("2018-07-29","2018-08-05"),("2018-08-13","2018-08-16"),("2018-08-20","2018-08-22"),("2018-09-15","2018-09-16"),
               ("2018-09-21","2018-09-22"),("2018-10-05","2018-10-07"),("2018-11-02","2018-11-03"),("2018-12-28","2019-01-05"),("2019-02-22","2019-02-24"),
@@ -701,17 +682,18 @@ event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-
 #analysis_time_object.date_range()
 #analysis_time_object.hours_minutes()
 #analysis_time_object.hours("")
-#analysis_time_object.day_of_week_hours("2019")
-#analysis_time_object.day_of_week("2019")
-#analysis_time_object.days("2020-01")
-#analysis_time_object.top_days()
-#analysis_time_object.days_range("2019-12-27","2020-01-05") #AMC 2019
+analysis_time_object.day_of_week_hours("")
+#analysis_time_object.days_range("2017-07-20","2020-04-27")#("2019-01-01","2019-12-31")##
+#analysis_time_object.day_of_week("2019-09")
+#analysis_time_object.days("2017-07")
+#analysis_time_object.top_days(number_of_days=40)
+#("2017-07-20","2017-12-31")## #AMC 2019
 #analysis_time_object.events(event_list)
-#analysis_time_object.months("")
+#analysis_time_object.months("2020")
 #analysis_time_object.years()
-#analysis_time_object.connections("2019",followers=True,following=True)
-analysis_time_object.breaks("2019",min_break=datetime.timedelta(hours=24))
+#analysis_time_object.connections("2020",followers=True,following=True)
+#analysis_time_object.breaks("2019",min_break=datetime.timedelta(hours=24))
 #analysis_time_object.yearly_analysis("2017")
 #analysis_time_object.auto_analysis()
 
-#util.json_file_structure(analysis_time_object.media_json_data["photos"])
+#util.json_file_structure(analysis_time_object.seen_content_json_data["chaining_seen"])
