@@ -62,7 +62,7 @@ def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=
     
     if print_latex:
         print("\n","#"*20,"Latex","#"*20)
-        print("""\\begin{table}[h]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c| } \n \hline TBC & TBC""")
+        print("""\\begin{table}[h!]\n\centering\n\caption{TBC}\n\label{table:1}\n\\begin{tabular}{ |c|c| } \n \hline TBC & TBC \\\\ \\hline""")
         if sort == "asc":
             for i in range(min(len(data_item),max_rows)):
                 print(data_item[i],"&",data_frequency[i],"\\\\",end="")
