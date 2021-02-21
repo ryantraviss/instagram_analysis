@@ -75,6 +75,8 @@ Message Likes Mode User (self.message_likes_mode_user)
 
 import json, matplotlib.pyplot as plt, numpy as np, datetime, statistics, util
 
+best_friend_list = []
+
 class AnalysisUser:
     def __init__(self, path = "", likes_filename = "likes.json", comments_filename = "comments.json", 
                  media_filename = "media.json", seen_content_filename = "seen_content.json", 
@@ -377,7 +379,42 @@ class AnalysisUser:
                 user_data.append(key)
                 
         return user_data
-       
+    
+    def _user_data_message_length(self):
+        users = {}
+        if self.message_mode_user == "sender_individual" or self.message_mode_user == "sender_both":
+            for x in range(len(self.messages_json_data)):
+                if len(self.messages_json_data[x]["participants"]) == 2:
+                    for y in range(len(self.messages_json_data[x]["conversation"])):
+                        if "text" in self.messages_json_data[x]["conversation"][y].keys():
+                            if self.messages_json_data[x]["conversation"][y]["text"] is not None:
+                                sender = self.messages_json_data[x]["conversation"][y]["sender"]
+                                if sender != self.username:
+                                    if sender not in users:
+                                        users[sender] = len(self.messages_json_data[x]["conversation"][y]["text"])
+                                    else:
+                                        users[sender] += len(self.messages_json_data[x]["conversation"][y]["text"])
+
+        if self.message_mode_user == "sender_group" or self.message_mode_user == "sender_both":
+            for x in range(len(self.messages_json_data)):
+                if len(self.messages_json_data[x]["participants"]) > 2:
+                    for y in range(len(self.messages_json_data[x]["conversation"])):
+                        if "text" in self.messages_json_data[x]["conversation"][y].keys():
+                            if self.messages_json_data[x]["conversation"][y]["text"] is not None:
+                                sender = self.messages_json_data[x]["conversation"][y]["sender"]
+                                if sender != self.username:
+                                    if sender not in users:
+                                        users[sender] = len(self.messages_json_data[x]["conversation"][y]["text"])
+                                    else:
+                                        users[sender] += len(self.messages_json_data[x]["conversation"][y]["text"])
+        #print(users)
+        user_list = [[],[]]
+        
+        for key in users:
+            user_list[0].append(key)
+            user_list[1].append(users[key])
+        return user_list
+   
     def profile_summary(self):
         """
         Prints a summary of your profile.
@@ -429,9 +466,61 @@ class AnalysisUser:
             while self.username in user_data:
                 user_data.remove(self.username)
             util.table(user_data,sort_by_likes=True) #add graphs?
+            users = np.unique(user_data, return_counts=True)
+            #counts = list(np.unique(user_data, return_counts=True)[1])
+            #util.graph_histogram_2(counts, "Number of Comments by a User", length=len(counts))
+            bf = [[],[]]
+            users = (list(map(str, users[0])), list(users[1]))
+            for i in range(len(users[0])):
+                if users[0][i] in best_friend_list:
+                    bf[0].append(users[0][i])
+                    bf[1].append(users[1][i])
+                    
+            return np.unique(user_data, return_counts=True) #used in message length
+            util.table(bf, unique=True)
+            #for i in range(len(bf[0])):
+            #    print(bf[0][i], bf[1][i])
+                    
         else:
             print("Error: This doesn't work with anonymised data!")
+            
+    def total_message_length(self):
+        user_list = self._user_data_message_length()
+        util.table(user_list, unique=True, sort_by_likes=True)
         
+        bf = [[],[]]
+        #users = (list(map(str, users[0])), list(users[1]))
+        for i in range(len(user_list[0])):
+            if user_list[0][i] in best_friend_list:
+                bf[0].append(user_list[0][i])
+                bf[1].append(user_list[1][i])
+                    
+        util.table(bf, unique=True)
+        
+    def average_message_length(self):
+        user_list = self._user_data_message_length()
+        #util.table(user_list, unique=True, sort_by_likes=True)
+        
+
+
+        message_count = self.best_friends()
+        message_count = (list(map(str, message_count[0])), list(message_count[1]))
+        for i in range(len(user_list[0])):
+            if user_list[0][i] in message_count[0]:
+                index = message_count[0].index(user_list[0][i])
+                user_list[1][i] /= message_count[1][index]
+                
+        util.table(user_list, sort_by_likes=True, unique=True)
+                
+        bf = [[],[]]
+        #users = (list(map(str, users[0])), list(users[1]))
+        for i in range(len(user_list[0])):
+            if user_list[0][i] in best_friend_list:
+                bf[0].append(user_list[0][i])
+                bf[1].append(user_list[1][i])
+
+        util.table(bf, unique=True)
+    
     def worst_friends(self):
         """
         Conducts worst friend analysis (basically same as best friend but sorting low to high).
@@ -451,6 +540,8 @@ class AnalysisUser:
             
     def video_calls(self):
         video_call_data = []
+        caller = []
+        date = []
         start_time_string = ""
         stop_time_string = ""
         for x in range(len(self.messages_json_data)):#x is chat
@@ -464,7 +555,8 @@ class AnalysisUser:
                     elif "ended a video call" in message["video_call_action"]:
                         stop_time_string = self.messages_json_data[x]["conversation"][y]["created_at"][:19]
                         stop_time = datetime.datetime.strptime(stop_time_string,"%Y-%m-%dT%H:%M:%S")
-                        #print(message)
+                        caller.append(self.messages_json_data[x]["participants"])
+                        date.append(message["created_at"])
                     else:
                         pass#print(message)
                     if start_time_string != "" and stop_time_string != "":
@@ -472,17 +564,24 @@ class AnalysisUser:
                         start_time_string = ""
                         stop_time_string = ""
                         
-        print(video_call_data)
+        video_call_data_str = list(map(str, video_call_data))
+        for i in range(len(video_call_data_str)):
+            print(caller[i], len(caller[i]), date[i], video_call_data_str[i])
+        print(i)
+        
+        print(date)
         
 #Below are all the public methods of AnalysisUser
-analysis_object = AnalysisUser(path="")#, media_likes = False, comment_likes = False, comments = False, stories = False, 
-                         #posts = False, direct = False, messages = False, message_likes = True, chaining_seen = False, followers = False, following=False)
+analysis_object = AnalysisUser(path="", media_likes = False, comment_likes = False, comments = True, stories = False, 
+                         posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = False, following=False)
 #analysis_object.change_settings()
 #analysis_object.read_settings()
 #analysis_object.profile_summary()
 #analysis_object.top_message()
-#analysis_object.best_friends()
+analysis_object.best_friends()
+#analysis_object.total_message_length()
+#analysis_object.average_message_length()
 #analysis_object.worst_friends()
-analysis_object.video_calls()
+#analysis_object.video_calls()
 
 #util.json_file_structure(analysis_object.media_json_data["photos"])
