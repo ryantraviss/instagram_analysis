@@ -1,5 +1,7 @@
 #util.py by Ryan Traviss
 import matplotlib.pyplot as plt, numpy as np, datetime, statistics, json
+import matplotlib as mpl
+mpl.rcParams['figure.dpi'] = 500
 
 def table(data, missing_data_items=0, sort_by_likes=False, sort="asc", max_rows=150, print_latex=False, print_lists = False, unique=False):
     """
@@ -126,7 +128,7 @@ def table_multicolumn(data_item, data_frequencies):#Work in Progress
         #print("Range ",max(data_frequency)-min(data_frequency),"\\\\")
         print(""" \hline\n\end{tabular}\n\end{table}""")
     
-def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_max = 0,ylabel="Activity"):
+def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_max = 0,ylabel="Activity", line_of_best_fit=False):
     """
     Plots the line graph of the data with nice formatting.
 
@@ -139,36 +141,59 @@ def graph(time_data,date,xlabel,style = "-b",unique = False, xtick_min=0, xtick_
     xlabel : string
         Self-explanatory.
     style : string, optional
-        How the graph should look(shape of crosses, line graph vs scatter ect). The default is "-b".
+        How the graph should look(shape of crosses, line graph vs scatter etc). The default is "-b".
     unique : Boolean, optional
         If np.unique been not been done already?. The default is False.
     xtick_max : integer, optional
         What should the xticks go up to from 0 (if 0 default behaviour is used). The default is 0.
-
-    Returns
-    -------
-    None.
+    ylabel : string, optional
+        The ylabel of the graph. The default is "activity".
+    line_of_best_fit : Boolean, optional
+        Should a line of best fit be added. The default is False.
 
     """
     if time_data == [] or time_data == ([],[]):
         print("Error: No data to plot a line graph")
         return
     if unique:
-        time,like_counts = time_data
+        time, like_counts = time_data
     else:
-        time,like_counts = np.unique(time_data, return_counts=True)
+        time, like_counts = np.unique(time_data, return_counts=True)
         
+    #The following is used to adding missing dates manually
+    #date_pos = [(7, "2018-04-12")]
+    date_pos = []   
+    for d_p in date_pos:
+        
+        time = np.insert(time, d_p[0], d_p[1])
+        like_counts = np.insert(like_counts, d_p[0], 0)  
+        
+    #time = np.insert(time, 5, "2020-01-01")
+    #like_counts = np.insert(like_counts, 5, 0)
+    
+    #time = np.insert(time, 6, "2020-01-02")
+    #like_counts = np.insert(like_counts, 6, 0)
+
     plt.plot(time,like_counts,style)
     if xtick_max != 0:
-        plt.xticks(range(xtick_min,xtick_max))
+        pass#plt.xticks(range(xtick_min,xtick_max))
     else:
-        plt.xticks([time[x] for x in range(0,len(time))])
+        pass
+        #plt.xticks(rotation=45) #rotates the xticks to be used if overlapping
+        #plt.xticks([0,1,2,3,4], ["2019-10-03", "2019-10-04", "2019-10-05", "2019-10-06", "2019-10-07"])
+        #plt.xticks([time[x] for x in range(0,len(time), 100)])
         #plt.xticks([time[0] , time[len(time)-1]])
     
     plt.xlabel(xlabel)
  
     plt.title(ylabel+" per " +xlabel+ " in "+date)
     plt.ylabel(ylabel)
+    
+    #adds line of best fit
+    if line_of_best_fit:
+        time = np.array(time)
+        m, b = np.polyfit(time, like_counts, 1)
+        plt.plot(time, m*time + b, color="red")
     
     plt.show()
     #plt.savefig("D:\ExeterMathsSchool\My Data Individual EMC\graphs\media_likes_months_"+year)
@@ -204,6 +229,23 @@ def graph_boxplot(time_data,date,xlabel, xtick_max=0):
     plt.title("Activity per " +xlabel+ " in "+date)
     plt.ylabel("Activity")
     plt.yticks([])#This removes the 1 on the y-axis which is there by default
+    plt.show()
+    
+def graph_histogram(data, date, xlabel, ylabel, xtick_min = 0, xtick_max=24):
+    plt.hist(data, bins = xtick_max-xtick_min)
+    plt.xticks([i for i in range(xtick_min,xtick_max)])
+    plt.title(ylabel+" per "+ xlabel+ " in "+date+ " Histogram")
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
+    
+def graph_histogram_2(data, ylabel, length=1014):
+    data.extend([0 for _ in range(length-len(data))])
+
+    plt.hist(data, bins=20)
+    plt.title(ylabel+" Histogram")
+    plt.xlabel(ylabel)
+    plt.ylabel("Frequency")
     plt.show()
 
 def json_file_structure(json_data, tabs=0):
