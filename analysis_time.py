@@ -124,7 +124,7 @@ class AnalysisTime:
         #This is an attribute so it can be altered easily by methods 
         #which set certain data sources to be used such as connections()
         #without needing to be passed as a parameter to every other method
-        self.print_lists = False
+        self.print_lists = True
         
     def _min_max_year(self):
         """
@@ -371,7 +371,7 @@ class AnalysisTime:
 
         """
         time_data = self._data_time(slice(0,len(year_month_day)),year_month_day,slice(11,13))
-        util.graph(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24,ylabel=self.ylabel)
+        util.graph_histogram(time_data,util.date_to_time_period(year_month_day),"Hour", self.ylabel)
         util.table(time_data,missing_data_items=(24-len(np.unique(time_data))), print_latex=self.print_latex, print_lists=self.print_lists)
         util.graph_boxplot(time_data,util.date_to_time_period(year_month_day),"Hour",xtick_max=24)
     
@@ -405,19 +405,19 @@ class AnalysisTime:
                     hours[day_of_week-1].append(day_of_week_hour[1])
             hours[day_of_week-1] = list(map(int,hours[day_of_week-1]))
             if graph_per_day:
-                util.graph(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24,ylabel=self.ylabel)
+                util.graph_histogram(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),self.ylabel)
                 util.graph_boxplot(hours[day_of_week-1],year_month,("hour for each Day of Week: "+str(day_of_week)),xtick_max=24)
                 print("Day of week",day_of_week)
                 util.table(hours[day_of_week-1],missing_data_items=(24-len(np.unique(hours[day_of_week-1]))),print_latex=self.print_latex, print_lists=self.print_lists)
         
         workday_hours = hours[0]+hours[1]+hours[2]+hours[3]+hours[4]
-        util.graph(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24,ylabel=self.ylabel)
+        util.graph_histogram(workday_hours,year_month,"hour during the week(Monday-Friday)",self.ylabel)
         util.graph_boxplot(workday_hours,year_month,"hour during the week(Monday-Friday)",xtick_max=24)
         print("Weekdays(Monday-Friday)")
         util.table(workday_hours,missing_data_items=(24-len(np.unique(workday_hours))),print_latex=self.print_latex, print_lists=self.print_lists)
         
         weekend_hours = hours[5] + hours[6]
-        util.graph(weekend_hours,year_month,"hour during the weekend",xtick_max=24,ylabel=self.ylabel)
+        util.graph_histogram(weekend_hours,year_month,"hour during the weekend",self.ylabel)
         util.graph_boxplot(weekend_hours,year_month,"hour during the weekend",xtick_max=24)
         print("Weekend")
         util.table(weekend_hours,missing_data_items=(24-len(np.unique(weekend_hours))),print_latex=self.print_latex, print_lists=self.print_lists)
@@ -438,7 +438,7 @@ class AnalysisTime:
         for date in time_data:
             day_datetime = datetime.date(int(date[:4]),int(date[5:7]),int(date[8:10]))
             day_of_week.append(day_datetime.isoweekday())
-        util.graph(day_of_week,year_month,"Day of Week",ylabel=self.ylabel)#,style = "xb")
+        util.graph_histogram(day_of_week,year_month,"Day of Week",self.ylabel, xtick_min =1, xtick_max=8)#,style = "xb")
         util.table(day_of_week,print_latex=self.print_latex, print_lists=self.print_lists)
         
     def days(self,year_month):
@@ -629,6 +629,25 @@ class AnalysisTime:
         util.graph(breaks,util.date_to_time_period(date), "day", ylabel="hours break",unique=True)
         util.table(breaks,sort_by_likes=True,unique=True,print_latex=self.print_latex, print_lists=self.print_lists)
         
+    def daily_correlation(self):
+        """
+        Determines the pmcc between days since account creation and usage + displays linegraph with line of best fit.
+        """
+        delta = datetime.datetime(2020, 4, 27) - datetime.datetime(2017, 7, 19) + datetime.timedelta(days=1)
+        daily_data = self._data_time(slice(0,1), "", slice(0,10), return_ints=False)
+        days_since_account_creation = list(range(delta.days))
+        daily_activity = []
+        for i in range(delta.days):
+            date = datetime.datetime.strftime(datetime.datetime(2017, 7, 19)+datetime.timedelta(days=i), "%Y-%m-%d")
+            #print(date, i, daily_data.count(date))
+            daily_activity.append(daily_data.count(date))
+        
+        print(self.ylabel, round(np.corrcoef(days_since_account_creation, daily_activity)[0][1], 4))
+        
+        util.graph((days_since_account_creation, daily_activity), "all time", "Day", ylabel=self.ylabel, unique=True, line_of_best_fit=True)
+        
+        util.graph_histogram_2(daily_activity, ylabel=self.ylabel)
+        
     def yearly_analysis(self, year):
         """
         Conducts all analysis for a year.
@@ -667,14 +686,21 @@ class AnalysisTime:
         print("#"*10,"Automated Analysis Finished","#"*10)
         
 #Below are all the public methods of Analysis
-analysis_time_object = AnalysisTime()#path="", media_likes = False, comment_likes = False, comments = False, stories = False, 
-                         #posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = True, following=True, print_latex=True)
+analysis_time_object = AnalysisTime()#media_likes = False, comment_likes = False, comments = False, stories = False, 
+                         #posts = False, direct = False, messages = False, message_likes = False, chaining_seen = False, followers = True, following=True, print_latex=False)
 event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-11","2018-05-13"),("2018-06-08","2018-06-10"),("2018-07-12","2018-07-13"),
               ("2018-07-20","2018-07-22"),("2018-07-29","2018-08-05"),("2018-08-13","2018-08-16"),("2018-08-20","2018-08-22"),("2018-09-15","2018-09-16"),
               ("2018-09-21","2018-09-22"),("2018-10-05","2018-10-07"),("2018-11-02","2018-11-03"),("2018-12-28","2019-01-05"),("2019-02-22","2019-02-24"),
               ("2019-03-01","2019-03-03"),("2019-03-30","2019-03-31"),("2019-06-19","2019-06-20"),("2019-06-21","2019-06-23"),("2019-07-12","2019-07-14"),
               ("2019-08-03","2019-08-05"),("2019-08-09","2019-08-17"),("2019-09-21","2019-09-23"),("2019-10-04","2019-10-06"),("2019-10-21","2019-10-24"),
               ("2019-12-28","2020-01-04")]
+
+event_day_either_side_list = [("2018-01-26","2018-01-29"),("2018-04-05","2018-04-15"),("2018-05-10","2018-05-14"),("2018-06-07","2018-06-11"),("2018-07-11","2018-07-14"),
+              ("2018-07-19","2018-07-23"),("2018-07-28","2018-08-06"),("2018-08-12","2018-08-17"),("2018-08-19","2018-08-23"),("2018-09-14","2018-09-17"),
+              ("2018-09-20","2018-09-23"),("2018-10-04","2018-10-08"),("2018-11-01","2018-11-04"),("2018-12-27","2019-01-06"),("2019-02-21","2019-02-25"),
+              ("2019-02-28","2019-03-04"),("2019-03-29","2019-04-01"),("2019-06-18","2019-06-21"),("2019-06-20","2019-06-24"),("2019-07-11","2019-07-15"),
+              ("2019-08-02","2019-08-06"),("2019-08-08","2019-08-18"),("2019-09-20","2019-09-24"),("2019-10-03","2019-10-07"),("2019-10-20","2019-10-25"),
+              ("2019-12-27","2020-01-05")]
 #analysis_time_object.change_settings()
 #analysis_time_object.read_settings()
 #analysis_time_object.data_sources()
@@ -682,9 +708,9 @@ event_list = [("2018-01-27","2018-01-28"),("2018-04-06","2018-04-14"),("2018-05-
 #analysis_time_object.date_range()
 #analysis_time_object.hours_minutes()
 #analysis_time_object.hours("")
-analysis_time_object.day_of_week_hours("")
-#analysis_time_object.days_range("2017-07-20","2020-04-27")#("2019-01-01","2019-12-31")##
-#analysis_time_object.day_of_week("2019-09")
+#analysis_time_object.day_of_week_hours("")
+#analysis_time_object.days_range("2018-04-05","2018-04-15")#("2019-08-08","2019-08-18")#("2019-10-03", "2019-10-07")##("2019-01-01","2019-12-31")##
+#analysis_time_object.day_of_week("2020")
 #analysis_time_object.days("2017-07")
 #analysis_time_object.top_days(number_of_days=40)
 #("2017-07-20","2017-12-31")## #AMC 2019
@@ -692,8 +718,9 @@ analysis_time_object.day_of_week_hours("")
 #analysis_time_object.months("2020")
 #analysis_time_object.years()
 #analysis_time_object.connections("2020",followers=True,following=True)
-#analysis_time_object.breaks("2019",min_break=datetime.timedelta(hours=24))
+#analysis_time_object.breaks("",min_break=datetime.timedelta(hours=24))
+#analysis_time_object.daily_correlation()
 #analysis_time_object.yearly_analysis("2017")
-#analysis_time_object.auto_analysis()
+analysis_time_object.auto_analysis()
 
 #util.json_file_structure(analysis_time_object.seen_content_json_data["chaining_seen"])
